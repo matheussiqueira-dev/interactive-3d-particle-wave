@@ -1,43 +1,43 @@
-# Interactive 3D Particle Wave
+# Partículas de Onda 3D Interativas
 
-An interactive 3D particle visualization experiment that responds to hand gestures in real-time. Built with **Three.js** and **MediaPipe Hand Tracking**.
+Um experimento de visualização de partículas 3D interativo que responde a gestos manuais em tempo real. Construído com **Three.js** e **MediaPipe Hand Tracking**.
 
-## Overview
+## Visão Geral
 
-This project renders a dynamic field of 28,000 particles that move in a wave pattern. By using your computer's webcam, you can control the visualization using hand gestures. The system detects your hand position and specific gestures to alter the simulation's speed, color, and particle behavior.
+Este projeto renderiza um campo dinâmico de 28.000 partículas que se movem em um padrão de onda. Usando a webcam do seu computador, você pode controlar a visualização através de gestos manuais. O sistema detecta a posição da sua mão e gestos específicos para alterar a velocidade, cor e comportamento da simulação.
 
-## Features
+## Funcionalidades
 
-- **Real-time 3D Rendering**: High-performance particle system using Three.js.
-- **Hand Gesture Control**: powered by MediaPipe.
-- **Interactive Modes**:
-  - **Pointer**: Move your hand to rotate the galaxy and disrupt particles.
-  - **Fist**: "Furious Mode" - Increases speed, turns red, and causes particle explosions.
-  - **Victory**: "Macro Zoom" - Zooms in particles and slows time.
-  - **Hang Loose**: "Freeze Time" - Pauses the wave animation.
-  - **Open Hand**: "Zen Mode" - Calming blue colors and slow, smooth motion.
+- **Renderização 3D em Tempo Real**: Sistema de partículas de alta performance usando Three.js.
+- **Controle por Gestos Manuais**: Alimentado pelo MediaPipe.
+- **Modos Interativos**:
+  - **Pointer**: Mova sua mão para rotacionar a galáxia e perturbar as partículas.
+  - **Punho Fechado**: "Modo Fúria" - Aumenta a velocidade, torna-se vermelho e causa explosões de partículas.
+  - **Vitória (V)**: "Macro Zoom" - Aproxima as partículas e desacelera o tempo.
+  - **Hang Loose**: "Congelar Tempo" - Pausa a animação da onda.
+  - **Mão Aberta**: "Modo Zen" - Cores azuis calmantes e movimento lento e suave.
 
-## Technologies Used
+## Tecnologias Utilizadas
 
 - **HTML5/CSS3**
-- **JavaScript (ES6 Modules)**
-- **Three.js** (3D Rendering Engine)
-- **MediaPipe Hands** (Computer Vision)
+- **JavaScript (Módulos ES6)**
+- **Three.js** (Motor de Renderização 3D)
+- **MediaPipe Hands** (Visão Computacional)
 
-## How to Run
+## Como Executar
 
-1. Clone this repository:
+1. Clone este repositório:
    ```bash
    git clone https://github.com/matheussiqueirahub/interactive-3d-particle-wave.git
    ```
-2. Open the project folder.
-3. Open `index.html` in your web browser.
-   - *Note*: For webcam access to work correctly, you may need to serve the file via a local server (like VS Code Live Server) or ensure your browser allows camera access for local files.
+2. Abra a pasta do projeto.
+3. Abra o arquivo `index.html` no seu navegador.
+   - *Nota*: Para o acesso à webcam funcionar corretamente, pode ser necessário servir o arquivo via servidor local (como o VS Code Live Server) ou garantir que seu navegador permite acesso à câmera para arquivos locais.
 
-## Credits
+## Autor
 
-Created by **Matheus Siqueira**.
+Desenvolvido por **Matheus Siqueira**.
 
-## License
+## Licença
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
