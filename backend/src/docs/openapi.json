@@ -1,0 +1,238 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Interactive 3D Particle Wave API",
+    "version": "1.0.0",
+    "description": "API backend para autenticacao, presets e telemetria operacional"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "requestId": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/system/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Registrar usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" },
+                  "role": { "type": "string", "enum": ["admin", "editor"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario criado"
+          },
+          "409": {
+            "description": "Email duplicado"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Autenticar usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token JWT emitido"
+          },
+          "401": {
+            "description": "Credenciais invalidas"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "summary": "Usuario autenticado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dados do usuario"
+          },
+          "401": {
+            "description": "Nao autenticado"
+          }
+        }
+      }
+    },
+    "/api/v1/presets": {
+      "get": {
+        "summary": "Listar presets",
+        "parameters": [
+          { "name": "scope", "in": "query", "schema": { "type": "string", "enum": ["public", "mine", "all"] } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar preset",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "quality", "wave", "sensitivity", "reducedMotion"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "quality": { "type": "string", "enum": ["auto", "high", "balanced", "performance"] },
+                  "wave": { "type": "string", "enum": ["cosmos", "ripple", "storm"] },
+                  "sensitivity": { "type": "number" },
+                  "reducedMotion": { "type": "boolean" },
+                  "isPublic": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Preset criado" },
+          "401": { "description": "Nao autenticado" }
+        }
+      }
+    },
+    "/api/v1/presets/{presetId}": {
+      "get": {
+        "summary": "Detalhar preset",
+        "parameters": [{ "name": "presetId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Preset encontrado" },
+          "404": { "description": "Preset nao encontrado" }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar preset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "presetId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Preset atualizado" }
+        }
+      },
+      "delete": {
+        "summary": "Remover preset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "presetId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Preset removido" }
+        }
+      }
+    },
+    "/api/v1/telemetry/events": {
+      "post": {
+        "summary": "Registrar evento de telemetria",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["sessionId", "fpsAvg", "fpsMin", "fpsMax", "particleCount", "quality", "wave", "cameraActive", "reducedMotion"],
+                "properties": {
+                  "sessionId": { "type": "string" },
+                  "fpsAvg": { "type": "number" },
+                  "fpsMin": { "type": "number" },
+                  "fpsMax": { "type": "number" },
+                  "particleCount": { "type": "number" },
+                  "quality": { "type": "string" },
+                  "wave": { "type": "string" },
+                  "cameraActive": { "type": "boolean" },
+                  "reducedMotion": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Evento aceito"
+          }
+        }
+      }
+    },
+    "/api/v1/telemetry/summary": {
+      "get": {
+        "summary": "Resumo de telemetria",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "windowMinutes", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo agregado"
+          }
+        }
+      }
+    }
+  }
+}

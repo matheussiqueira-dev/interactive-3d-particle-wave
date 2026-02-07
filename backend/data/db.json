@@ -1,0 +1,32 @@
+{
+  "users": [],
+  "presets": [
+    {
+      "id": "preset-calm-default",
+      "name": "Calmo",
+      "description": "Experiencia suave para foco visual e baixa energia",
+      "quality": "auto",
+      "wave": "cosmos",
+      "sensitivity": 0.8,
+      "reducedMotion": true,
+      "ownerId": null,
+      "isPublic": true,
+      "createdAt": "2026-02-07T00:00:00.000Z",
+      "updatedAt": "2026-02-07T00:00:00.000Z"
+    },
+    {
+      "id": "preset-explorer-default",
+      "name": "Explorar",
+      "description": "Equilibrio entre resposta visual e performance",
+      "quality": "balanced",
+      "wave": "ripple",
+      "sensitivity": 1,
+      "reducedMotion": false,
+      "ownerId": null,
+      "isPublic": true,
+      "createdAt": "2026-02-07T00:00:00.000Z",
+      "updatedAt": "2026-02-07T00:00:00.000Z"
+    }
+  ],
+  "telemetry": []
+}
