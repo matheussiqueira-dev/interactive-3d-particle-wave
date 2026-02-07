@@ -4,6 +4,8 @@ export class UIController {
         this.trackingStatus = document.getElementById('trackingStatus');
         this.fpsValue = document.getElementById('fpsValue');
         this.particleCountLabel = document.getElementById('particleCountLabel');
+        this.qualityModeLabel = document.getElementById('qualityModeLabel');
+        this.inputSourceLabel = document.getElementById('inputSourceLabel');
 
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.loadingTitle = document.getElementById('loadingTitle');
@@ -22,7 +24,12 @@ export class UIController {
         this.pauseBtn = document.getElementById('pauseBtn');
         this.resetBtn = document.getElementById('resetBtn');
         this.snapshotBtn = document.getElementById('snapshotBtn');
+        this.copyConfigBtn = document.getElementById('copyConfigBtn');
         this.cameraBtn = document.getElementById('cameraBtn');
+
+        this.presetCalmBtn = document.getElementById('presetCalmBtn');
+        this.presetExplorerBtn = document.getElementById('presetExplorerBtn');
+        this.presetImpactBtn = document.getElementById('presetImpactBtn');
 
         this.togglePreviewBtn = document.getElementById('togglePreviewBtn');
         this.videoShell = document.getElementById('videoShell');
@@ -53,8 +60,13 @@ export class UIController {
         this.pauseBtn.addEventListener('click', () => handlers.onPause?.());
         this.resetBtn.addEventListener('click', () => handlers.onReset?.());
         this.snapshotBtn.addEventListener('click', () => handlers.onSnapshot?.());
+        this.copyConfigBtn.addEventListener('click', () => handlers.onCopyConfig?.());
         this.cameraBtn.addEventListener('click', () => handlers.onCameraToggle?.());
         this.togglePreviewBtn.addEventListener('click', () => handlers.onPreviewToggle?.());
+
+        this.presetCalmBtn.addEventListener('click', () => handlers.onPresetSelect?.('calm'));
+        this.presetExplorerBtn.addEventListener('click', () => handlers.onPresetSelect?.('explorer'));
+        this.presetImpactBtn.addEventListener('click', () => handlers.onPresetSelect?.('impact'));
     }
 
     setControlValues(settings) {
@@ -87,6 +99,14 @@ export class UIController {
         this.particleCountLabel.textContent = `${count.toLocaleString('pt-BR')}`;
     }
 
+    setQualityModeLabel(label) {
+        this.qualityModeLabel.textContent = label;
+    }
+
+    setInputSource(sourceLabel) {
+        this.inputSourceLabel.textContent = sourceLabel;
+    }
+
     setLoading(visible, title, message) {
         if (typeof title === 'string') {
             this.loadingTitle.textContent = title;
@@ -97,6 +117,7 @@ export class UIController {
         }
 
         this.loadingOverlay.classList.toggle('hidden', !visible);
+        this.loadingOverlay.setAttribute('aria-busy', visible ? 'true' : 'false');
     }
 
     setGesture(label, color) {
@@ -111,10 +132,12 @@ export class UIController {
 
     setPaused(paused) {
         this.pauseBtn.textContent = paused ? 'Retomar' : 'Pausar';
+        this.pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
     }
 
     setCameraActive(active) {
         this.cameraBtn.textContent = active ? 'Desativar camera' : 'Ativar camera';
+        this.cameraBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
         this.cameraNotice.textContent = active
             ? 'Camera ativa e detectando gestos.'
             : 'Camera inativa. Use o mouse para interagir.';
@@ -124,6 +147,21 @@ export class UIController {
     setPreviewVisible(visible) {
         this.videoShell.classList.toggle('is-hidden', !visible);
         this.togglePreviewBtn.textContent = visible ? 'Ocultar preview' : 'Mostrar preview';
+        this.togglePreviewBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+    }
+
+    setActivePreset(presetKey) {
+        const mapping = {
+            calm: this.presetCalmBtn,
+            explorer: this.presetExplorerBtn,
+            impact: this.presetImpactBtn,
+        };
+
+        Object.entries(mapping).forEach(([key, button]) => {
+            const active = key === presetKey;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
     }
 
     showToast(message) {

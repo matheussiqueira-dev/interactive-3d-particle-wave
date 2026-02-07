@@ -2,13 +2,44 @@ import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import {
     DEFAULT_SETTINGS,
     GESTURE_MODES,
+    QUALITY_PRESETS,
     WAVE_PROFILES,
+    resolveAutoQualityKey,
     resolveQualityPreset,
 } from './config.js';
 import { ParticleField } from './core/particle-field.js';
 import { GestureController } from './core/gesture-controller.js';
 import { PerformanceMonitor } from './core/performance-monitor.js';
 import { UIController } from './core/ui-controller.js';
+import { AdaptiveQualityManager } from './core/adaptive-quality.js';
+import { loadStoredSettings, sanitizeSettings, saveStoredSettings } from './core/settings-store.js';
+import { readSettingsFromURL, writeSettingsToURL } from './core/url-state.js';
+
+const PRESET_CONFIGS = {
+    calm: {
+        label: 'Calmo',
+        quality: 'auto',
+        wave: 'cosmos',
+        sensitivity: 0.8,
+        reducedMotion: true,
+    },
+    explorer: {
+        label: 'Explorar',
+        quality: 'balanced',
+        wave: 'ripple',
+        sensitivity: 1,
+        reducedMotion: false,
+    },
+    impact: {
+        label: 'Impacto',
+        quality: 'high',
+        wave: 'storm',
+        sensitivity: 1.3,
+        reducedMotion: false,
+    },
+};
+
+const PRESET_SEQUENCE = ['calm', 'explorer', 'impact'];
 
 function cloneMode(mode) {
     return {
@@ -38,12 +69,46 @@ function pointerToWorld(pointer) {
     };
 }
 
-const settings = { ...DEFAULT_SETTINGS };
+function buildSettings() {
+    const qualityKeys = new Set(Object.keys(QUALITY_PRESETS));
+    const waveKeys = new Set(Object.keys(WAVE_PROFILES));
+
+    const stored = loadStoredSettings(DEFAULT_SETTINGS, qualityKeys, waveKeys);
+    const fromUrl = readSettingsFromURL();
+
+    return sanitizeSettings({ ...stored, ...fromUrl }, DEFAULT_SETTINGS, qualityKeys, waveKeys);
+}
+
+function sameNumber(a, b) {
+    return Math.abs(a - b) < 0.0001;
+}
+
+function inferPresetKey(settings) {
+    for (const [presetKey, preset] of Object.entries(PRESET_CONFIGS)) {
+        const matches =
+            settings.quality === preset.quality
+            && settings.wave === preset.wave
+            && sameNumber(settings.sensitivity, preset.sensitivity)
+            && settings.reducedMotion === preset.reducedMotion;
+
+        if (matches) {
+            return presetKey;
+        }
+    }
+
+    return 'custom';
+}
+
+const settings = buildSettings();
+let activePresetKey = inferPresetKey(settings);
+
 const ui = new UIController();
 ui.setControlValues(settings);
 ui.setPaused(false);
 ui.setCameraActive(false);
 ui.setPreviewVisible(true);
+ui.setInputSource('Mouse');
+ui.setActivePreset(activePresetKey);
 
 const canvasHost = document.getElementById('canvasHost');
 const videoElement = document.getElementById('inputVideo');
@@ -67,32 +132,45 @@ renderer.setClearColor(0x000000, 0);
 
 canvasHost.appendChild(renderer.domElement);
 
-let qualityPreset = resolveQualityPreset(settings.quality);
+let autoQualityKey = resolveAutoQualityKey();
+let qualityPreset = resolveQualityPreset(settings.quality, autoQualityKey);
 const particleField = new ParticleField(scene, {
     particleCount: qualityPreset.particleCount,
 });
 
 const cursorRing = new THREE.Mesh(
     new THREE.RingGeometry(1.5, 2.5, 42),
-    new THREE.MeshBasicMaterial({ color: 0x55e8ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({
+        color: 0x55e8ff,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+    })
 );
 cursorRing.rotation.x = -Math.PI * 0.5;
 scene.add(cursorRing);
 
 const cursorCore = new THREE.Mesh(
     new THREE.CircleGeometry(0.65, 24),
-    new THREE.MeshBasicMaterial({ color: 0x55e8ff, transparent: true, opacity: 0.34, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({
+        color: 0x55e8ff,
+        transparent: true,
+        opacity: 0.34,
+        side: THREE.DoubleSide,
+    })
 );
 cursorCore.rotation.x = -Math.PI * 0.5;
 scene.add(cursorCore);
 
 const performanceMonitor = new PerformanceMonitor();
+const adaptiveQualityManager = new AdaptiveQualityManager();
 const clock = new THREE.Clock();
 
 let isPaused = false;
 let cameraActive = false;
 let previewVisible = true;
 let virtualTime = 0;
+let fpsUiTimer = 0;
 
 let gestureState = {
     detected: false,
@@ -111,9 +189,29 @@ let currentMode = cloneMode(GESTURE_MODES.NONE);
 let activeModeKey = 'NONE';
 
 let lastDetectionState = false;
+let lastInputSourceLabel = '';
 
 const cursorTarget = new THREE.Vector3(0, 2.8, 14);
 const cursorCurrent = new THREE.Vector3(0, 2.8, 14);
+
+function persistUserSettings() {
+    saveStoredSettings(settings);
+    writeSettingsToURL(settings, DEFAULT_SETTINGS);
+}
+
+function syncPresetState() {
+    activePresetKey = inferPresetKey(settings);
+    ui.setActivePreset(activePresetKey);
+}
+
+function setInputSourceLabel(sourceLabel) {
+    if (lastInputSourceLabel === sourceLabel) {
+        return;
+    }
+
+    lastInputSourceLabel = sourceLabel;
+    ui.setInputSource(sourceLabel);
+}
 
 function resizeRenderer() {
     const width = canvasHost.clientWidth;
@@ -124,19 +222,27 @@ function resizeRenderer() {
     camera.updateProjectionMatrix();
 }
 
-function applyQuality(showFeedback = true) {
-    qualityPreset = resolveQualityPreset(settings.quality);
+function applyQuality(showFeedback = true, reason = 'manual') {
+    qualityPreset = resolveQualityPreset(settings.quality, autoQualityKey);
 
     particleField.setParticleCount(qualityPreset.particleCount);
     ui.setParticleCount(qualityPreset.particleCount);
+    ui.setQualityModeLabel(qualityPreset.label);
 
     const nextPixelRatio = Math.min(window.devicePixelRatio || 1, qualityPreset.pixelRatioCap);
     renderer.setPixelRatio(nextPixelRatio);
     resizeRenderer();
 
-    if (showFeedback) {
-        ui.showToast(`Qualidade aplicada: ${qualityPreset.label}`);
+    if (!showFeedback) {
+        return;
     }
+
+    if (reason === 'adaptive') {
+        ui.showToast(`Autoajuste de qualidade: ${qualityPreset.label}`);
+        return;
+    }
+
+    ui.showToast(`Qualidade aplicada: ${qualityPreset.label}`);
 }
 
 function applyMode(modeKey) {
@@ -208,14 +314,88 @@ function captureSnapshot() {
     });
 }
 
+async function copyCurrentConfig() {
+    persistUserSettings();
+    const shareUrl = window.location.href;
+
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            ui.showToast('Link da configuracao copiado.');
+            return;
+        } catch (error) {
+            console.warn('Falha ao copiar configuracao via clipboard API.', error);
+        }
+    }
+
+    const tempInput = document.createElement('textarea');
+    tempInput.value = shareUrl;
+    tempInput.setAttribute('readonly', 'true');
+    tempInput.style.position = 'absolute';
+    tempInput.style.left = '-9999px';
+    document.body.appendChild(tempInput);
+    tempInput.select();
+
+    let copied = false;
+    try {
+        copied = document.execCommand('copy');
+    } catch (error) {
+        copied = false;
+    }
+
+    tempInput.remove();
+
+    ui.showToast(copied
+        ? 'Link da configuracao copiado.'
+        : 'Nao foi possivel copiar automaticamente.');
+}
+
+function applyPreset(presetKey) {
+    const preset = PRESET_CONFIGS[presetKey];
+    if (!preset) {
+        return;
+    }
+
+    settings.quality = preset.quality;
+    settings.wave = preset.wave;
+    settings.sensitivity = preset.sensitivity;
+    settings.reducedMotion = preset.reducedMotion;
+
+    if (settings.quality === 'auto') {
+        autoQualityKey = resolveAutoQualityKey();
+    }
+
+    ui.setControlValues(settings);
+    applyQuality(false);
+    syncPresetState();
+    persistUserSettings();
+    syncModeFromInput();
+
+    ui.showToast(`Preset aplicado: ${preset.label}`);
+}
+
+function cyclePreset() {
+    const currentIndex = PRESET_SEQUENCE.indexOf(activePresetKey);
+    const nextIndex = currentIndex < 0
+        ? 0
+        : (currentIndex + 1) % PRESET_SEQUENCE.length;
+
+    applyPreset(PRESET_SEQUENCE[nextIndex]);
+}
+
 async function toggleCamera(gestureController) {
+    if (!cameraActive) {
+        ui.setLoading(true, 'Ativando camera', 'Carregando dependencias e solicitando permissao...');
+    }
+
     const active = await gestureController.toggle();
     cameraActive = active;
 
     ui.setCameraActive(active);
+    ui.setLoading(false);
+
     if (active) {
         ui.setTrackingStatus('Camera ativa e rastreamento online.', 'active');
-        ui.setLoading(false);
         ui.showToast('Camera ativada.');
     } else {
         ui.showToast('Camera desativada. Controle por mouse ativo.');
@@ -302,9 +482,14 @@ function setupPointerEvents() {
         mouseState.active = true;
 
         syncModeFromInput();
-    });
+    }, { passive: true });
 
     canvasHost.addEventListener('pointerleave', () => {
+        mouseState.active = false;
+        syncModeFromInput();
+    });
+
+    canvasHost.addEventListener('pointercancel', () => {
         mouseState.active = false;
         syncModeFromInput();
     });
@@ -325,7 +510,7 @@ function setupKeyboardShortcuts(gestureController) {
         }
 
         if (event.code === 'KeyG') {
-            toggleCamera(gestureController);
+            void toggleCamera(gestureController);
             return;
         }
 
@@ -334,10 +519,18 @@ function setupKeyboardShortcuts(gestureController) {
             return;
         }
 
+        if (event.code === 'KeyP') {
+            cyclePreset();
+            return;
+        }
+
         if (event.code === 'Digit1') {
             settings.quality = 'auto';
+            autoQualityKey = resolveAutoQualityKey();
             ui.qualitySelect.value = 'auto';
             applyQuality();
+            syncPresetState();
+            persistUserSettings();
             return;
         }
 
@@ -345,6 +538,8 @@ function setupKeyboardShortcuts(gestureController) {
             settings.quality = 'high';
             ui.qualitySelect.value = 'high';
             applyQuality();
+            syncPresetState();
+            persistUserSettings();
             return;
         }
 
@@ -352,6 +547,8 @@ function setupKeyboardShortcuts(gestureController) {
             settings.quality = 'balanced';
             ui.qualitySelect.value = 'balanced';
             applyQuality();
+            syncPresetState();
+            persistUserSettings();
             return;
         }
 
@@ -359,6 +556,8 @@ function setupKeyboardShortcuts(gestureController) {
             settings.quality = 'performance';
             ui.qualitySelect.value = 'performance';
             applyQuality();
+            syncPresetState();
+            persistUserSettings();
         }
     });
 }
@@ -370,6 +569,23 @@ function setupVisibilityHandling() {
             ui.setPaused(true);
             ui.showToast('Simulacao pausada em segundo plano.');
         }
+    });
+}
+
+function setupLifecycle(gestureController, resizeObserver) {
+    window.addEventListener('beforeunload', () => {
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+        }
+
+        void gestureController.stop();
+
+        particleField.dispose();
+        cursorRing.geometry.dispose();
+        cursorRing.material.dispose();
+        cursorCore.geometry.dispose();
+        cursorCore.material.dispose();
+        renderer.dispose();
     });
 }
 
@@ -387,6 +603,16 @@ function animate() {
 
         const pointerData = getActivePointer();
         updateCursorFromPointer(pointerData);
+
+        if (pointerData.source === 'gesture') {
+            setInputSourceLabel('Gesto');
+        } else if (pointerData.source === 'mouse') {
+            setInputSourceLabel('Mouse');
+        } else if (cameraActive) {
+            setInputSourceLabel('Camera standby');
+        } else {
+            setInputSourceLabel('Mouse');
+        }
 
         const color = currentMode.color;
         cursorRing.material.color.setRGB(color.r, color.g, color.b);
@@ -412,7 +638,22 @@ function animate() {
     renderer.render(scene, camera);
 
     const fps = performanceMonitor.update(deltaTime);
-    ui.setFps(fps);
+
+    fpsUiTimer += deltaTime;
+    if (fpsUiTimer >= 0.2) {
+        ui.setFps(fps);
+        fpsUiTimer = 0;
+    }
+
+    if (!isPaused && settings.quality === 'auto') {
+        const suggestedKey = adaptiveQualityManager.update(fps, autoQualityKey);
+        if (suggestedKey && suggestedKey !== autoQualityKey) {
+            autoQualityKey = suggestedKey;
+            applyQuality(true, 'adaptive');
+        }
+    } else {
+        adaptiveQualityManager.reset();
+    }
 }
 
 const gestureController = new GestureController({
@@ -446,18 +687,29 @@ const gestureController = new GestureController({
 ui.bindControls({
     onQualityChange: (qualityKey) => {
         settings.quality = qualityKey;
+        if (qualityKey === 'auto') {
+            autoQualityKey = resolveAutoQualityKey();
+        }
         applyQuality();
+        syncPresetState();
+        persistUserSettings();
     },
     onWaveChange: (waveKey) => {
         settings.wave = waveKey;
+        syncPresetState();
+        persistUserSettings();
         const label = WAVE_PROFILES[waveKey]?.label || waveKey;
         ui.showToast(`Perfil aplicado: ${label}`);
     },
     onSensitivityChange: (value) => {
         settings.sensitivity = value;
+        syncPresetState();
+        persistUserSettings();
     },
     onReducedMotionChange: (checked) => {
         settings.reducedMotion = checked;
+        syncPresetState();
+        persistUserSettings();
         ui.showToast(checked ? 'Modo reduzido ativado.' : 'Modo reduzido desativado.');
     },
     onPause: () => {
@@ -471,11 +723,17 @@ ui.bindControls({
     onSnapshot: () => {
         captureSnapshot();
     },
+    onCopyConfig: async () => {
+        await copyCurrentConfig();
+    },
     onCameraToggle: () => {
-        toggleCamera(gestureController);
+        void toggleCamera(gestureController);
     },
     onPreviewToggle: () => {
         togglePreview();
+    },
+    onPresetSelect: (presetKey) => {
+        applyPreset(presetKey);
     },
 });
 
@@ -483,18 +741,22 @@ setupPointerEvents();
 setupKeyboardShortcuts(gestureController);
 setupVisibilityHandling();
 
+let resizeObserver = null;
 if (window.ResizeObserver) {
-    const resizeObserver = new ResizeObserver(() => resizeRenderer());
+    resizeObserver = new ResizeObserver(() => resizeRenderer());
     resizeObserver.observe(canvasHost);
 }
 
 window.addEventListener('resize', resizeRenderer, { passive: true });
 
+persistUserSettings();
 applyQuality(false);
 resizeRenderer();
 syncModeFromInput();
 
 (async () => {
+    ui.setLoading(true, 'Inicializando experiencia', 'Preparando renderizacao e solicitando acesso a camera...');
+
     const started = await gestureController.start();
     cameraActive = started;
     ui.setCameraActive(started);
@@ -511,4 +773,5 @@ syncModeFromInput();
     syncModeFromInput();
 })();
 
+setupLifecycle(gestureController, resizeObserver);
 animate();

@@ -23,6 +23,8 @@ export const QUALITY_PRESETS = {
     },
 };
 
+export const QUALITY_ORDER = ['performance', 'balanced', 'high'];
+
 export const WAVE_PROFILES = {
     cosmos: {
         id: 'cosmos',
@@ -148,12 +150,14 @@ export function resolveAutoQualityKey() {
     return 'balanced';
 }
 
-export function resolveQualityPreset(qualityKey) {
+export function resolveQualityPreset(qualityKey, autoQualityOverride = null) {
     if (qualityKey !== 'auto') {
         return { key: qualityKey, ...QUALITY_PRESETS[qualityKey] };
     }
 
-    const resolvedKey = resolveAutoQualityKey();
+    const resolvedKey = QUALITY_PRESETS[autoQualityOverride]
+        ? autoQualityOverride
+        : resolveAutoQualityKey();
     return {
         key: resolvedKey,
         ...QUALITY_PRESETS[resolvedKey],

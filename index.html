@@ -5,17 +5,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive 3D Particle Wave | Matheus Siqueira</title>
-    <meta name="description" content="Experiencia 3D interativa com particulas, gestos por webcam e painel de controle em tempo real.">
+    <meta name="description"
+        content="Experiencia 3D interativa com particulas, gestos por webcam, presets operacionais e painel de controle em tempo real.">
+    <meta name="robots" content="index,follow,max-image-preview:large">
+    <meta name="theme-color" content="#040b12">
+    <meta name="application-name" content="Interactive 3D Particle Wave">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Interactive 3D Particle Wave">
+    <meta property="og:description"
+        content="Visualizacao 3D em tempo real com controle por gestos, fallback por mouse e configuracao adaptativa de performance.">
+    <meta property="og:url" content="https://matheussiqueira-dev.github.io/interactive-3d-particle-wave/">
+    <meta property="og:site_name" content="Interactive 3D Particle Wave">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Interactive 3D Particle Wave">
+    <meta name="twitter:description"
+        content="Projeto frontend moderno com Three.js + MediaPipe, foco em UX, performance e acessibilidade.">
+
+    <link rel="canonical" href="https://matheussiqueira-dev.github.io/interactive-3d-particle-wave/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="./styles/main.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Interactive 3D Particle Wave",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Web Browser",
+      "author": {
+        "@type": "Person",
+        "name": "Matheus Siqueira"
+      },
+      "description": "Aplicacao web interativa de visualizacao 3D com hand tracking em tempo real.",
+      "url": "https://matheussiqueira-dev.github.io/interactive-3d-particle-wave/"
+    }
+    </script>
 </head>
 
 <body>
+    <a class="skip-link" href="#mainContent">Ir para o conteudo principal</a>
+
     <div class="app-shell">
         <header class="top-bar reveal">
             <div class="brand-block">
@@ -36,15 +70,27 @@
                     <span>Particulas</span>
                     <strong id="particleCountLabel">--</strong>
                 </div>
+                <div class="pill metric-pill">
+                    <span>Qualidade</span>
+                    <strong id="qualityModeLabel">--</strong>
+                </div>
+                <div class="pill metric-pill">
+                    <span>Input</span>
+                    <strong id="inputSourceLabel">Mouse</strong>
+                </div>
             </div>
         </header>
 
-        <main class="main-layout">
-            <section class="stage-panel reveal" aria-label="Visualizacao 3D">
+        <main class="main-layout" id="mainContent" tabindex="-1">
+            <section class="stage-panel reveal" aria-label="Visualizacao 3D" aria-describedby="experienceDescription">
+                <p id="experienceDescription" class="sr-only">
+                    Cenario 3D com particulas em tempo real que reagem a gestos da mao ou movimento do mouse.
+                </p>
+
                 <div id="canvasHost" class="canvas-host" role="img"
                     aria-label="Simulacao tridimensional de onda de particulas reativa a gestos"></div>
 
-                <div id="loadingOverlay" class="overlay-card" role="status" aria-live="polite">
+                <div id="loadingOverlay" class="overlay-card" role="status" aria-live="polite" aria-busy="true">
                     <h2 id="loadingTitle">Inicializando experiencia</h2>
                     <p id="loadingMessage">Conceda permissao de camera para ativar o controle por gestos.</p>
                 </div>
@@ -95,10 +141,20 @@
                     <input id="reducedMotionToggle" type="checkbox">
                 </div>
 
+                <div class="field-group">
+                    <span class="field-label">Presets rapidos</span>
+                    <div class="preset-grid">
+                        <button id="presetCalmBtn" type="button">Calmo</button>
+                        <button id="presetExplorerBtn" type="button">Explorar</button>
+                        <button id="presetImpactBtn" type="button">Impacto</button>
+                    </div>
+                </div>
+
                 <div class="action-grid">
                     <button id="pauseBtn" type="button">Pausar</button>
                     <button id="resetBtn" type="button">Resetar camera</button>
                     <button id="snapshotBtn" type="button">Salvar snapshot</button>
+                    <button id="copyConfigBtn" type="button">Copiar configuracao</button>
                     <button id="cameraBtn" type="button">Desativar camera</button>
                 </div>
 
@@ -107,6 +163,7 @@
                     <p><kbd>Espaco</kbd> Pausar/retomar</p>
                     <p><kbd>G</kbd> Toggle camera</p>
                     <p><kbd>C</kbd> Mostrar/ocultar preview</p>
+                    <p><kbd>P</kbd> Alternar presets</p>
                     <p><kbd>1</kbd> Auto <kbd>2</kbd> Alta <kbd>3</kbd> Balanceada <kbd>4</kbd> Performance</p>
                 </div>
             </aside>
@@ -115,19 +172,18 @@
         <section class="camera-dock reveal" aria-label="Preview da camera">
             <div class="camera-header">
                 <h2>Camera de referencia</h2>
-                <button id="togglePreviewBtn" type="button">Ocultar preview</button>
+                <button id="togglePreviewBtn" type="button" aria-pressed="true">Ocultar preview</button>
             </div>
 
             <div class="video-shell" id="videoShell">
-                <video id="inputVideo" playsinline muted></video>
+                <video id="inputVideo" playsinline muted aria-label="Preview espelhado da camera"></video>
                 <div id="cameraNotice" class="camera-notice">Camera inativa. Use o mouse para interagir.</div>
             </div>
         </section>
 
         <footer class="shortcut-bar">
-            <p>Gestos: <strong>Ponteiro</strong> controle livre, <strong>Punho</strong> impacto, <strong>Vitoria</strong> zoom suave,
-                <strong>Hang Loose</strong> congelar, <strong>Mao aberta</strong> modo zen.
-            </p>
+            <p>Gestos: <strong>Ponteiro</strong> controle livre, <strong>Punho</strong> impacto, <strong>Vitoria</strong>
+                zoom suave, <strong>Hang Loose</strong> congelar, <strong>Mao aberta</strong> modo zen.</p>
             <p class="author">Autoria visual e tecnica: Matheus Siqueira</p>
         </footer>
     </div>

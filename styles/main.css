@@ -39,6 +39,38 @@ body {
     overflow: hidden;
 }
 
+.skip-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    transform: translateY(-170%);
+    background: rgba(5, 18, 29, 0.95);
+    border: 1px solid rgba(145, 219, 249, 0.55);
+    color: var(--text-primary);
+    border-radius: 10px;
+    padding: 9px 12px;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    border: 0;
+}
+
 body::before,
 body::after {
     content: '';
@@ -296,6 +328,11 @@ body::after {
     color: #c7deec;
 }
 
+.field-label {
+    font-size: 0.84rem;
+    color: #c7deec;
+}
+
 select,
 input[type='range'],
 button {
@@ -354,6 +391,21 @@ input[type='range'] {
     gap: 8px;
 }
 
+#cameraBtn {
+    grid-column: 1 / -1;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.preset-grid button {
+    min-height: 40px;
+    font-size: 0.85rem;
+}
+
 button {
     cursor: pointer;
     transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
@@ -371,6 +423,12 @@ button:active {
 
 button.primary {
     background: linear-gradient(145deg, rgba(18, 51, 66, 0.95), rgba(25, 74, 94, 0.95));
+}
+
+button.is-active {
+    border-color: rgba(255, 197, 110, 0.74);
+    background: linear-gradient(145deg, rgba(49, 42, 22, 0.95), rgba(72, 55, 24, 0.95));
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
 }
 
 .hint-block {
@@ -578,6 +636,14 @@ input:focus-visible {
 
 @media (max-width: 620px) {
     .action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #cameraBtn {
+        grid-column: auto;
+    }
+
+    .preset-grid {
         grid-template-columns: 1fr;
     }
 

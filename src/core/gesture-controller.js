@@ -1,3 +1,5 @@
+import { ensureMediaPipeDependencies } from './script-loader.js';
+
 function clamp01(value) {
     return Math.min(Math.max(value, 0), 1);
 }
@@ -21,10 +23,12 @@ export class GestureController {
             return true;
         }
 
-        if (!window.Hands || !window.Camera) {
+        try {
+            await ensureMediaPipeDependencies();
+        } catch (error) {
             const message = 'Dependencias de visao computacional indisponiveis.';
             this.onStatus?.(message, 'error');
-            this.onError?.(new Error(message));
+            this.onError?.(error);
             return false;
         }
 
@@ -80,6 +84,17 @@ export class GestureController {
         try {
             if (this.camera?.stop) {
                 await this.camera.stop();
+            }
+
+            const stream = this.videoElement?.srcObject;
+            if (stream?.getTracks) {
+                for (const track of stream.getTracks()) {
+                    track.stop();
+                }
+            }
+
+            if (this.videoElement) {
+                this.videoElement.srcObject = null;
             }
         } catch (error) {
             this.onError?.(error);
