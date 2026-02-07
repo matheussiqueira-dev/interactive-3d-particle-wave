@@ -133,6 +133,7 @@ export const DEFAULT_SETTINGS = {
     wave: 'cosmos',
     sensitivity: 1,
     reducedMotion: reducedMotionByDefault,
+    highContrast: false,
 };
 
 export function resolveAutoQualityKey() {

@@ -51,6 +51,7 @@ export class ParticleField {
         this.baseZ = null;
         this.baseRadius = null;
         this.noise = null;
+        this.frameCount = 0;
 
         const initialCount = options.particleCount || 28000;
         this.setParticleCount(initialCount);
@@ -138,6 +139,8 @@ export class ParticleField {
             return;
         }
 
+        this.frameCount += 1;
+
         const {
             time,
             mode,
@@ -155,6 +158,8 @@ export class ParticleField {
 
         const cursorX = interaction.cursorX;
         const cursorZ = interaction.cursorZ;
+        const highDensity = this.pointCount >= 30000;
+        const shouldUpdateColors = interaction.active || !highDensity || (this.frameCount % 2 === 0);
 
         for (let index = 0; index < this.pointCount; index += 1) {
             const i3 = index * 3;
@@ -182,15 +187,19 @@ export class ParticleField {
 
             this.positions[i3 + 1] = y;
 
-            const heightFactor = clamp((y + 8) / 16, 0, 1);
-            const tone = 0.58 + (heightFactor * 0.42);
-            this.colors[i3] = clamp((mode.color.r * tone) + (heightFactor * 0.08), 0, 1);
-            this.colors[i3 + 1] = clamp((mode.color.g * tone) + (heightFactor * 0.1), 0, 1);
-            this.colors[i3 + 2] = clamp((mode.color.b * tone) + (heightFactor * 0.12), 0, 1);
+            if (shouldUpdateColors) {
+                const heightFactor = clamp((y + 8) / 16, 0, 1);
+                const tone = 0.58 + (heightFactor * 0.42);
+                this.colors[i3] = clamp((mode.color.r * tone) + (heightFactor * 0.08), 0, 1);
+                this.colors[i3 + 1] = clamp((mode.color.g * tone) + (heightFactor * 0.1), 0, 1);
+                this.colors[i3 + 2] = clamp((mode.color.b * tone) + (heightFactor * 0.12), 0, 1);
+            }
         }
 
         this.geometry.attributes.position.needsUpdate = true;
-        this.geometry.attributes.color.needsUpdate = true;
+        if (shouldUpdateColors) {
+            this.geometry.attributes.color.needsUpdate = true;
+        }
     }
 
     dispose() {

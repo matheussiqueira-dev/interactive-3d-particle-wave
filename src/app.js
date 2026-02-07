@@ -114,6 +114,7 @@ ui.setPreviewVisible(true);
 ui.setInputSource('Mouse');
 ui.setActivePreset(activePresetKey);
 ui.setSignalWave(getWaveLabel(settings.wave));
+ui.setFocusMode(false);
 
 const canvasHost = document.getElementById('canvasHost');
 const videoElement = document.getElementById('inputVideo');
@@ -174,6 +175,7 @@ const clock = new THREE.Clock();
 let isPaused = false;
 let cameraActive = false;
 let previewVisible = true;
+let isFocusMode = false;
 let virtualTime = 0;
 let fpsUiTimer = 0;
 let hasUserAdjustedControl = activePresetKey !== 'custom';
@@ -200,10 +202,25 @@ let lastInputSourceLabel = '';
 
 const cursorTarget = new THREE.Vector3(0, 2.8, 14);
 const cursorCurrent = new THREE.Vector3(0, 2.8, 14);
+let persistTimer = null;
 
-function persistUserSettings() {
+function persistUserSettingsImmediate() {
     saveStoredSettings(settings);
     writeSettingsToURL(settings, DEFAULT_SETTINGS);
+}
+
+function persistUserSettings() {
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+    }
+
+    persistTimer = window.setTimeout(() => {
+        persistUserSettingsImmediate();
+    }, 180);
+}
+
+function applyHighContrastMode(active) {
+    document.body.classList.toggle('high-contrast', active);
 }
 
 function syncPresetState() {
@@ -353,7 +370,7 @@ function captureSnapshot() {
 }
 
 async function copyCurrentConfig() {
-    persistUserSettings();
+    persistUserSettingsImmediate();
     const shareUrl = window.location.href;
 
     if (navigator.clipboard?.writeText) {
@@ -425,6 +442,17 @@ function cyclePreset() {
 
 function applyRecommendedPreset() {
     applyPreset('explorer');
+}
+
+function setFocusMode(nextState) {
+    isFocusMode = nextState;
+    document.body.classList.toggle('focus-mode', isFocusMode);
+    ui.setFocusMode(isFocusMode);
+}
+
+function toggleFocusMode() {
+    setFocusMode(!isFocusMode);
+    ui.showToast(isFocusMode ? 'Modo foco ativado.' : 'Modo foco desativado.');
 }
 
 async function toggleCamera(gestureController) {
@@ -563,6 +591,11 @@ function setupKeyboardShortcuts(gestureController) {
             return;
         }
 
+        if (event.code === 'KeyF') {
+            toggleFocusMode();
+            return;
+        }
+
         if (event.code === 'KeyP') {
             cyclePreset();
             return;
@@ -618,6 +651,8 @@ function setupVisibilityHandling() {
 
 function setupLifecycle(gestureController, resizeObserver) {
     window.addEventListener('beforeunload', () => {
+        persistUserSettingsImmediate();
+
         if (resizeObserver) {
             resizeObserver.disconnect();
         }
@@ -764,6 +799,14 @@ ui.bindControls({
         persistUserSettings();
         ui.showToast(checked ? 'Modo reduzido ativado.' : 'Modo reduzido desativado.');
     },
+    onHighContrastChange: (checked) => {
+        settings.highContrast = checked;
+        hasUserAdjustedControl = true;
+        applyHighContrastMode(checked);
+        syncPresetState();
+        persistUserSettings();
+        ui.showToast(checked ? 'Alto contraste ativado.' : 'Alto contraste desativado.');
+    },
     onPause: () => {
         isPaused = !isPaused;
         ui.setPaused(isPaused);
@@ -790,6 +833,9 @@ ui.bindControls({
     onRecommendedPreset: () => {
         applyRecommendedPreset();
     },
+    onFocusModeToggle: () => {
+        toggleFocusMode();
+    },
 });
 
 setupPointerEvents();
@@ -804,7 +850,8 @@ if (window.ResizeObserver) {
 
 window.addEventListener('resize', resizeRenderer, { passive: true });
 
-persistUserSettings();
+applyHighContrastMode(settings.highContrast);
+persistUserSettingsImmediate();
 applyQuality(false);
 resizeRenderer();
 syncModeFromInput();

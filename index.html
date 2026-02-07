@@ -63,6 +63,7 @@
                 <div class="hero-actions">
                     <button id="heroCameraBtn" type="button">Ativar Sensor de Gestos</button>
                     <button id="heroPresetBtn" type="button">Aplicar preset recomendado</button>
+                    <button id="focusModeBtn" type="button" aria-pressed="false">Entrar em modo foco</button>
                 </div>
             </div>
 
@@ -173,6 +174,11 @@
                         <label for="reducedMotionToggle">Modo de movimento reduzido</label>
                         <input id="reducedMotionToggle" type="checkbox">
                     </div>
+
+                    <div class="field-group toggle-group">
+                        <label for="highContrastToggle">Modo de alto contraste</label>
+                        <input id="highContrastToggle" type="checkbox">
+                    </div>
                 </section>
 
                 <section class="control-card" aria-labelledby="sectionPresetTitle">
@@ -200,6 +206,7 @@
                     <p><kbd>Espaco</kbd> Pausar/retomar</p>
                     <p><kbd>G</kbd> Toggle camera</p>
                     <p><kbd>C</kbd> Mostrar/ocultar preview</p>
+                    <p><kbd>F</kbd> Entrar/sair do modo foco</p>
                     <p><kbd>P</kbd> Alternar presets</p>
                     <p><kbd>1</kbd> Auto <kbd>2</kbd> Alta <kbd>3</kbd> Balanceada <kbd>4</kbd> Performance</p>
                 </details>

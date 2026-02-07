@@ -25,6 +25,7 @@ export class UIController {
         this.sensitivityRange = document.getElementById('sensitivityRange');
         this.interactionValue = document.getElementById('interactionValue');
         this.reducedMotionToggle = document.getElementById('reducedMotionToggle');
+        this.highContrastToggle = document.getElementById('highContrastToggle');
 
         this.pauseBtn = document.getElementById('pauseBtn');
         this.resetBtn = document.getElementById('resetBtn');
@@ -38,6 +39,7 @@ export class UIController {
 
         this.heroCameraBtn = document.getElementById('heroCameraBtn');
         this.heroPresetBtn = document.getElementById('heroPresetBtn');
+        this.focusModeBtn = document.getElementById('focusModeBtn');
 
         this.togglePreviewBtn = document.getElementById('togglePreviewBtn');
         this.videoShell = document.getElementById('videoShell');
@@ -69,6 +71,10 @@ export class UIController {
             handlers.onReducedMotionChange?.(Boolean(event.target.checked));
         });
 
+        this.highContrastToggle.addEventListener('change', (event) => {
+            handlers.onHighContrastChange?.(Boolean(event.target.checked));
+        });
+
         this.pauseBtn.addEventListener('click', () => handlers.onPause?.());
         this.resetBtn.addEventListener('click', () => handlers.onReset?.());
         this.snapshotBtn.addEventListener('click', () => handlers.onSnapshot?.());
@@ -82,6 +88,7 @@ export class UIController {
 
         this.heroCameraBtn.addEventListener('click', () => handlers.onCameraToggle?.());
         this.heroPresetBtn.addEventListener('click', () => handlers.onRecommendedPreset?.());
+        this.focusModeBtn.addEventListener('click', () => handlers.onFocusModeToggle?.());
     }
 
     setControlValues(settings) {
@@ -89,8 +96,10 @@ export class UIController {
         this.waveSelect.value = settings.wave;
         this.sensitivityRange.value = String(settings.sensitivity);
         this.reducedMotionToggle.checked = Boolean(settings.reducedMotion);
+        this.highContrastToggle.checked = Boolean(settings.highContrast);
         this.setInteractionValue(settings.sensitivity);
-        this.setSignalWave(settings.wave);
+        const selectedWaveLabel = this.waveSelect.selectedOptions?.[0]?.textContent || settings.wave;
+        this.setSignalWave(selectedWaveLabel);
     }
 
     setInteractionValue(value) {
@@ -177,6 +186,11 @@ export class UIController {
             ? 'Camera ativa e detectando gestos.'
             : 'Camera inativa. Use o mouse para interagir.';
         this.cameraNotice.classList.toggle('active', active);
+    }
+
+    setFocusMode(active) {
+        this.focusModeBtn.textContent = active ? 'Sair do modo foco' : 'Entrar em modo foco';
+        this.focusModeBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
 
     setPreviewVisible(visible) {

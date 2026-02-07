@@ -1,209 +1,164 @@
-# Interactive 3D Particle Wave - Backend and API Platform
+# Interactive 3D Particle Wave
 
-Backend profissional para a aplicacao Interactive 3D Particle Wave, com foco em arquitetura modular, seguranca, observabilidade e escalabilidade operacional.
+Aplicacao frontend interativa de visualizacao 3D em tempo real, com controle por gestos via webcam, fallback por mouse e painel operacional orientado a UX.
 
-## Visao Geral do Backend
+## Visao Geral do Frontend
 
-Este backend entrega uma API REST versionada para:
+O produto foi projetado para transformar uma demo visual em uma experiencia de uso profissional, com foco em:
 
-- autenticacao e autorizacao baseada em JWT
-- gerenciamento de presets de simulacao (privados/publicos)
-- ingestao e analise de telemetria de performance
-- endpoints operacionais de health/readiness
-- documentacao OpenAPI com Swagger UI
+- imersao visual em tempo real
+- controle natural por gestos
+- configuracao rapida de performance e comportamento
+- clareza operacional para usuarios iniciantes e avancados
 
-O dominio principal atende a experiencia 3D da aplicacao frontend, permitindo persistencia de configuracoes, controle de acesso e monitoramento de uso em tempo real.
+### Publico-alvo
+- portfolios tecnicos e criativos
+- demonstracoes de produto e tecnologia
+- times de UX/Frontend que precisam de base escalavel para experiencias interativas
 
-## Arquitetura Adotada
+## Stack e Tecnologias Utilizadas
 
-Arquitetura modular por contexto de dominio, com separacao de responsabilidades por camada:
+### Frontend
+- HTML5 sem framework
+- CSS3 com Design Tokens
+- JavaScript ES Modules
+- Three.js (renderizacao 3D)
+- MediaPipe Hands (rastreamento de gestos)
 
-- `modules/*`: dominio e casos de uso (`auth`, `presets`, `telemetry`, `system`)
-- `common/*`: middlewares, tratamento de erro, logger e utilitarios compartilhados
-- `storage/*`: persistencia em JSON com transacao serializada
-- `config/*`: validacao e normalizacao de variaveis de ambiente
-- `docs/*`: contrato OpenAPI
+### Backend (suporte opcional no mesmo repositório)
+- Node.js + Express
+- JWT, Zod, Helmet, CORS, Rate Limit
+- API modular para autenticacao, presets e telemetria
 
-Pontos de desenho arquitetural:
+## Arquitetura Frontend
 
-- estilo de monolito modular (simples para evolucao incremental)
-- contratos claros entre controller -> service -> repository
-- baixo acoplamento com DI manual via `container.js`
-- tratamento centralizado de erros e validacao de entrada com Zod
+Arquitetura modular com separacao clara de responsabilidades:
 
-## Stack Tecnologica
+- `src/app.js`: orquestracao de estado, fluxo, atalhos e runtime
+- `src/config.js`: presets, modos, perfis de onda e defaults
+- `src/core/particle-field.js`: motor de particulas e update por frame
+- `src/core/gesture-controller.js`: ciclo de camera e leitura de gestos
+- `src/core/ui-controller.js`: camada de interface desacoplada
+- `src/core/adaptive-quality.js`: ajuste adaptativo por FPS
+- `src/core/settings-store.js`: persistencia local de preferencias
+- `src/core/url-state.js`: compartilhamento de estado via URL
 
-- Node.js 20+
-- Express 4
-- Zod (validacao de schema)
-- JWT (`jsonwebtoken`) para auth stateless
-- Bcrypt (`bcryptjs`) para hash de senha
-- Helmet, CORS e rate limit para hardening
-- Pino + pino-http para logging estruturado
-- Swagger UI para documentacao de API
-- Node test runner + Supertest para testes de integracao
+## UX/UI Rework (Nivel Senior)
+
+Principais entregas aplicadas:
+
+- fluxo guiado em jornada (camera -> gesto -> ajuste)
+- painel de controle reorganizado por intencao
+- cards de contexto em tempo real no palco principal
+- recomendacao dinamica de proximo passo
+- modo foco para reduzir distracoes em sessoes imersivas
+- modo de alto contraste para acessibilidade avancada
+- design system com tokens consistentes de cor, espaco e estados
+
+Documentacao de design:
+
+- `docs/UX-UI-DECISIONS.md`
+
+## Funcionalidades Principais
+
+- simulacao 3D com alta densidade de particulas
+- gestos suportados: `POINTER`, `FIST`, `VICTORY`, `HANG_LOOSE`, `OPEN`
+- perfis visuais: `Cosmos`, `Ripple`, `Storm`
+- presets de experiencia: `Calmo`, `Explorar`, `Impacto`
+- qualidade adaptativa por desempenho (modo Auto)
+- snapshot PNG
+- link compartilhavel com estado de configuracao
+- fallback por mouse quando camera indisponivel
+- atalhos de teclado para operacao rapida
+
+## Otimizacoes de Performance
+
+- particulas com buffers tipados reutilizaveis
+- throttling de atualizacao de indicadores visuais
+- lazy load de dependencias de visao computacional
+- update de cor de particulas em densidade alta com estrategia de frame slicing
+- persistencia de configuracoes com debounce para reduzir churn de IO
+
+## Acessibilidade e Responsividade
+
+### Acessibilidade
+- `skip-link` para navegacao por teclado
+- `aria-live`, `aria-pressed` e `aria-busy` em estados dinamicos
+- foco visivel padronizado em componentes interativos
+- `prefers-reduced-motion` respeitado
+- modo de alto contraste dedicado
+
+### Responsividade
+- layouts adaptativos para desktop, tablet e mobile
+- reorganizacao de painéis e cards de estado por breakpoint
+- manutenção de usabilidade em viewport reduzida
 
 ## Estrutura do Projeto
 
 ```text
 .
-|- backend/
-|  |- data/
-|  |  `- db.json
-|  |- src/
-|  |  |- app.js
-|  |  |- server.js
-|  |  |- container.js
-|  |  |- config/
-|  |  |  `- env.js
-|  |  |- common/
-|  |  |  |- async-handler.js
-|  |  |  |- logger.js
-|  |  |  |- errors/
-|  |  |  |  `- app-error.js
-|  |  |  `- middleware/
-|  |  |     |- auth.js
-|  |  |     |- error-handler.js
-|  |  |     |- not-found.js
-|  |  |     |- payload-guard.js
-|  |  |     |- request-context.js
-|  |  |     `- validate.js
-|  |  |- modules/
-|  |  |  |- auth/
-|  |  |  |- presets/
-|  |  |  |- telemetry/
-|  |  |  `- system/
-|  |  |- storage/
-|  |  |  `- json-store.js
-|  |  `- docs/
-|  |     `- openapi.json
-|  |- tests/
-|  |  `- api.test.js
-|  |- .env.example
-|  `- package.json
 |- index.html
-|- src/
 |- styles/
+|  `- main.css
+|- src/
+|  |- app.js
+|  |- config.js
+|  `- core/
+|     |- adaptive-quality.js
+|     |- gesture-controller.js
+|     |- particle-field.js
+|     |- performance-monitor.js
+|     |- script-loader.js
+|     |- settings-store.js
+|     |- ui-controller.js
+|     `- url-state.js
+|- docs/
+|  `- UX-UI-DECISIONS.md
+|- backend/
+|  `- (API opcional para auth/presets/telemetry)
 `- README.md
 ```
 
-## API e Contratos
-
-Base URL local:
-
-```text
-http://localhost:4000/api/v1
-```
-
-Documentacao interativa:
-
-```text
-http://localhost:4000/docs
-```
-
-Endpoints principais:
-
-- `GET /system/health`
-- `GET /system/ready`
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/me`
-- `GET /presets`
-- `GET /presets/:presetId`
-- `POST /presets`
-- `PATCH /presets/:presetId`
-- `DELETE /presets/:presetId`
-- `POST /telemetry/events`
-- `GET /telemetry/summary` (admin)
-
-## Seguranca e Confiabilidade
-
-Medidas implementadas:
-
-- autenticao JWT stateless
-- autorizacao por papel (`admin`, `editor`)
-- hash de senha com bcrypt
-- validacao estrita de payload com Zod
-- bloqueio de chaves perigosas (`__proto__`, `constructor`, `prototype`)
-- Helmet para headers de seguranca
-- CORS com allowlist
-- rate limit global + rate limit reforcado em auth
-- tratamento centralizado de excecoes com codigos de erro padronizados
-- request id por requisicao para correlacao de logs
-
 ## Setup e Execucao
 
-### 1. Instalar dependencias
+### Frontend (local)
+```bash
+# na raiz do projeto
+python -m http.server 5500
+```
 
+Acesse:
+```text
+http://localhost:5500
+```
+
+### Backend (opcional)
 ```bash
 cd backend
 npm install
-```
-
-### 2. Configurar ambiente
-
-```bash
-cp .env.example .env
-```
-
-Defina no minimo:
-
-- `JWT_SECRET` (valor forte)
-- `CORS_ORIGIN`
-
-### 3. Rodar em desenvolvimento
-
-```bash
 npm run dev
 ```
 
-### 4. Rodar em producao
+## Build
 
-```bash
-npm start
-```
+Projeto frontend estatico, sem etapa obrigatoria de build.
 
-## Testes
+## Boas Praticas Adotadas
 
-Executar testes de integracao:
-
-```bash
-cd backend
-npm test
-```
-
-A suite cobre fluxo critico:
-
-- health check
-- registro e login
-- criacao e leitura de preset autenticado
-- ingestao de telemetria
-- autorizacao no endpoint administrativo
-
-## Boas Praticas e Padroes
-
-- SOLID aplicado nas camadas de service/repository
-- DRY em middlewares e validacoes
-- clean boundaries por modulo
-- contratos de erro consistentes
-- versionamento de API em `/api/v1`
-- design orientado a evolucao incremental para banco relacional futuro
+- arquitetura modular e desacoplada
+- estado previsivel e persistente
+- UX orientada a fluxo e clareza operacional
+- design system com tokens reutilizaveis
+- acessibilidade tratada como requisito de produto
+- desempenho adaptativo para diferentes capacidades de hardware
 
 ## Melhorias Futuras
 
-- migrar persistencia JSON para PostgreSQL (com migracoes)
-- refresh token com revogacao e rotacao
-- auditoria de seguranca automatizada no CI
-- cache para queries mais acessadas (Redis)
-- tracing distribuido com OpenTelemetry
-- testes de carga e SLOs por endpoint
-- RBAC mais granular por escopo
-
-## UX/UI Documentation
-
-Decisoes de UX, UI, Design System, acessibilidade e responsividade estao documentadas em:
-
-- `docs/UX-UI-DECISIONS.md`
+- shader pipeline customizado para escalabilidade acima de 100k particulas
+- painel de analytics UX (tempo de sessao, funil de ativacao)
+- biblioteca de presets sincronizada com backend autenticado
+- testes automatizados de regressao visual e acessibilidade
+- internacionalizacao (i18n)
 
 Autoria: Matheus Siqueira  
 Website: https://www.matheussiqueira.dev/

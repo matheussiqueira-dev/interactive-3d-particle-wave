@@ -45,6 +45,8 @@ Oferecer uma experiencia imersiva de visualizacao 3D controlada por gestos, com 
 - Indicador de passo concluido na jornada
 - Estado ativo para presets
 - Alteracao contextual de recomendacao em tempo real
+- Modo foco para sessao imersiva sem distrações de UI
+- Modo de alto contraste para leitura assistiva
 
 ## 4. Direcao de UI aplicada
 
@@ -93,6 +95,7 @@ Oferecer uma experiencia imersiva de visualizacao 3D controlada por gestos, com 
 - Contraste reforcado entre texto e fundo
 - Focus ring consistente em todos os controles-chave
 - Suporte a `prefers-reduced-motion`
+- Modo dedicado de alto contraste com tokens visuais acessiveis
 
 ### Pontos para evolucao
 - Incluir auditoria automatica com axe/lighthouse no CI

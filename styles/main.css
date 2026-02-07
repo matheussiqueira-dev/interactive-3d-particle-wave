@@ -21,6 +21,23 @@
     --shadow-glow: 0 0 32px rgba(211, 255, 120, 0.2);
 }
 
+body.high-contrast {
+    --bg-void: #000000;
+    --bg-forest: #0c0f0d;
+    --bg-olive: #1a1f1a;
+    --surface-soft: rgba(10, 10, 10, 0.94);
+    --surface-strong: rgba(0, 0, 0, 0.97);
+    --surface-elevated: rgba(20, 20, 20, 0.97);
+    --line-subtle: rgba(255, 255, 255, 0.45);
+    --line-strong: rgba(255, 255, 255, 0.75);
+    --text-primary: #ffffff;
+    --text-secondary: #f1f1f1;
+    --text-muted: #dddddd;
+    --accent-lime: #f3ff8a;
+    --accent-mint: #98ffd8;
+    --accent-amber: #ffd89d;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -170,6 +187,16 @@ body::after {
     width: min(330px, 100%);
 }
 
+#focusModeBtn {
+    border-style: dashed;
+}
+
+body.focus-mode #focusModeBtn {
+    border-style: solid;
+    border-color: rgba(211, 255, 120, 0.82);
+    background: linear-gradient(140deg, rgba(53, 79, 44, 0.96), rgba(31, 50, 27, 0.96));
+}
+
 button,
 select,
 input[type='range'] {
@@ -260,6 +287,16 @@ button:active {
     grid-template-columns: minmax(0, 1fr) 360px;
     gap: 12px;
     min-height: 0;
+}
+
+body.focus-mode .workspace {
+    grid-template-columns: 1fr;
+}
+
+body.focus-mode .command-panel,
+body.focus-mode .journey-strip,
+body.focus-mode .camera-dock {
+    display: none;
 }
 
 .stage-panel {

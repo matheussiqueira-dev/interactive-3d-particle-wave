@@ -23,6 +23,10 @@ export function sanitizeSettings(partialSettings, defaults, validQualityKeys, va
         safe.reducedMotion = partialSettings.reducedMotion;
     }
 
+    if (typeof partialSettings?.highContrast === 'boolean') {
+        safe.highContrast = partialSettings.highContrast;
+    }
+
     return safe;
 }
 

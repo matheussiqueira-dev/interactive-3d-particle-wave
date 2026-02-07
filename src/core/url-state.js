@@ -2,6 +2,7 @@ const QUALITY_PARAM = 'q';
 const WAVE_PARAM = 'w';
 const SENSITIVITY_PARAM = 's';
 const REDUCED_MOTION_PARAM = 'rm';
+const HIGH_CONTRAST_PARAM = 'hc';
 
 function parseBoolean(value) {
     if (value === '1' || value === 'true') {
@@ -22,6 +23,7 @@ export function readSettingsFromURL() {
     const wave = params.get(WAVE_PARAM);
     const sensitivityRaw = params.get(SENSITIVITY_PARAM);
     const reducedMotionRaw = params.get(REDUCED_MOTION_PARAM);
+    const highContrastRaw = params.get(HIGH_CONTRAST_PARAM);
 
     const settings = {};
 
@@ -43,6 +45,11 @@ export function readSettingsFromURL() {
     const reducedMotion = parseBoolean(reducedMotionRaw);
     if (typeof reducedMotion === 'boolean') {
         settings.reducedMotion = reducedMotion;
+    }
+
+    const highContrast = parseBoolean(highContrastRaw);
+    if (typeof highContrast === 'boolean') {
+        settings.highContrast = highContrast;
     }
 
     return settings;
@@ -73,6 +80,12 @@ export function writeSettingsToURL(settings, defaults) {
         params.set(REDUCED_MOTION_PARAM, settings.reducedMotion ? '1' : '0');
     } else {
         params.delete(REDUCED_MOTION_PARAM);
+    }
+
+    if (typeof settings.highContrast === 'boolean' && settings.highContrast !== defaults.highContrast) {
+        params.set(HIGH_CONTRAST_PARAM, settings.highContrast ? '1' : '0');
+    } else {
+        params.delete(HIGH_CONTRAST_PARAM);
     }
 
     const nextQuery = params.toString();
