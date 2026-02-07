@@ -199,5 +199,11 @@ A suite cobre fluxo critico:
 - testes de carga e SLOs por endpoint
 - RBAC mais granular por escopo
 
+## UX/UI Documentation
+
+Decisoes de UX, UI, Design System, acessibilidade e responsividade estao documentadas em:
+
+- `docs/UX-UI-DECISIONS.md`
+
 Autoria: Matheus Siqueira  
 Website: https://www.matheussiqueira.dev/

@@ -8,7 +8,7 @@
     <meta name="description"
         content="Experiencia 3D interativa com particulas, gestos por webcam, presets operacionais e painel de controle em tempo real.">
     <meta name="robots" content="index,follow,max-image-preview:large">
-    <meta name="theme-color" content="#040b12">
+    <meta name="theme-color" content="#121610">
     <meta name="application-name" content="Interactive 3D Particle Wave">
 
     <meta property="og:type" content="website">
@@ -26,7 +26,7 @@
     <link rel="canonical" href="https://matheussiqueira-dev.github.io/interactive-3d-particle-wave/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="./styles/main.css">
 
@@ -51,13 +51,22 @@
     <a class="skip-link" href="#mainContent">Ir para o conteudo principal</a>
 
     <div class="app-shell">
-        <header class="top-bar reveal">
-            <div class="brand-block">
-                <p class="eyebrow">Realtime Gesture Visual Lab</p>
-                <h1>Interactive 3D Particle Wave</h1>
+        <header class="top-shell reveal">
+            <div class="hero-panel">
+                <div class="brand-block">
+                    <p class="eyebrow">Gesture-Driven Visual Experience</p>
+                    <h1>Interactive 3D Particle Wave</h1>
+                    <p class="hero-description">Controle uma cena de particulas em tempo real com gestos da mao, presets de
+                        experiencia e ajustes adaptativos de performance.</p>
+                </div>
+
+                <div class="hero-actions">
+                    <button id="heroCameraBtn" type="button">Ativar Sensor de Gestos</button>
+                    <button id="heroPresetBtn" type="button">Aplicar preset recomendado</button>
+                </div>
             </div>
 
-            <div class="status-row" aria-live="polite">
+            <div class="status-grid" aria-live="polite">
                 <div class="pill" id="trackingPill" data-state="neutral">
                     <span class="dot" aria-hidden="true"></span>
                     <span id="trackingStatus">Aguardando inicializacao da camera</span>
@@ -81,11 +90,30 @@
             </div>
         </header>
 
-        <main class="main-layout" id="mainContent" tabindex="-1">
+        <main class="workspace" id="mainContent" tabindex="-1">
             <section class="stage-panel reveal" aria-label="Visualizacao 3D" aria-describedby="experienceDescription">
                 <p id="experienceDescription" class="sr-only">
                     Cenario 3D com particulas em tempo real que reagem a gestos da mao ou movimento do mouse.
                 </p>
+
+                <div class="stage-signals" aria-live="polite">
+                    <article class="signal-card">
+                        <p>Fonte de controle</p>
+                        <strong id="signalSourceLabel">Mouse</strong>
+                    </article>
+                    <article class="signal-card">
+                        <p>Perfil em uso</p>
+                        <strong id="signalWaveLabel">Cosmos</strong>
+                    </article>
+                    <article class="signal-card">
+                        <p>Sensibilidade</p>
+                        <strong id="signalSensitivityLabel">1.0x</strong>
+                    </article>
+                    <article class="signal-card signal-emphasis">
+                        <p>Proximo passo</p>
+                        <strong id="recommendationLabel">Ative o sensor de gestos para liberar interacao por mao.</strong>
+                    </article>
+                </div>
 
                 <div id="canvasHost" class="canvas-host" role="img"
                     aria-label="Simulacao tridimensional de onda de particulas reativa a gestos"></div>
@@ -103,71 +131,102 @@
                 <div id="toast" class="toast" aria-live="assertive"></div>
             </section>
 
-            <aside class="control-panel reveal" aria-label="Painel de controle">
+            <aside class="command-panel reveal" aria-label="Painel de controle">
                 <div class="panel-header">
-                    <h2>Controle da Simulacao</h2>
-                    <p>Performance, comportamento e usabilidade em tempo real.</p>
+                    <h2>Command Deck</h2>
+                    <p>Gerencie qualidade, comportamento e ritmo da experiencia sem interromper a interacao.</p>
                 </div>
 
-                <div class="field-group">
-                    <label for="qualitySelect">Qualidade</label>
-                    <select id="qualitySelect" aria-label="Selecionar qualidade">
-                        <option value="auto">Auto</option>
-                        <option value="high">Alta</option>
-                        <option value="balanced">Balanceada</option>
-                        <option value="performance">Performance</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label for="waveSelect">Perfil de onda</label>
-                    <select id="waveSelect" aria-label="Selecionar perfil de onda">
-                        <option value="cosmos">Cosmos</option>
-                        <option value="ripple">Ripple</option>
-                        <option value="storm">Storm</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label for="sensitivityRange">Sensibilidade de interacao</label>
-                    <div class="range-row">
-                        <input id="sensitivityRange" type="range" min="0.6" max="1.6" step="0.1" value="1">
-                        <output id="interactionValue" for="sensitivityRange">1.0x</output>
+                <section class="control-card" aria-labelledby="sectionQualityTitle">
+                    <h3 id="sectionQualityTitle">Calibragem Visual</h3>
+                    <div class="field-group">
+                        <label for="qualitySelect">Qualidade</label>
+                        <select id="qualitySelect" aria-label="Selecionar qualidade">
+                            <option value="auto">Auto</option>
+                            <option value="high">Alta</option>
+                            <option value="balanced">Balanceada</option>
+                            <option value="performance">Performance</option>
+                        </select>
                     </div>
-                </div>
 
-                <div class="field-group toggle-group">
-                    <label for="reducedMotionToggle">Modo de movimento reduzido</label>
-                    <input id="reducedMotionToggle" type="checkbox">
-                </div>
+                    <div class="field-group">
+                        <label for="waveSelect">Perfil de onda</label>
+                        <select id="waveSelect" aria-label="Selecionar perfil de onda">
+                            <option value="cosmos">Cosmos</option>
+                            <option value="ripple">Ripple</option>
+                            <option value="storm">Storm</option>
+                        </select>
+                    </div>
+                </section>
 
-                <div class="field-group">
-                    <span class="field-label">Presets rapidos</span>
+                <section class="control-card" aria-labelledby="sectionInteractionTitle">
+                    <h3 id="sectionInteractionTitle">Resposta de Interacao</h3>
+                    <div class="field-group">
+                        <label for="sensitivityRange">Sensibilidade de interacao</label>
+                        <div class="range-row">
+                            <input id="sensitivityRange" type="range" min="0.6" max="1.6" step="0.1" value="1">
+                            <output id="interactionValue" for="sensitivityRange">1.0x</output>
+                        </div>
+                    </div>
+
+                    <div class="field-group toggle-group">
+                        <label for="reducedMotionToggle">Modo de movimento reduzido</label>
+                        <input id="reducedMotionToggle" type="checkbox">
+                    </div>
+                </section>
+
+                <section class="control-card" aria-labelledby="sectionPresetTitle">
+                    <h3 id="sectionPresetTitle">Presets de Experiencia</h3>
                     <div class="preset-grid">
                         <button id="presetCalmBtn" type="button">Calmo</button>
                         <button id="presetExplorerBtn" type="button">Explorar</button>
                         <button id="presetImpactBtn" type="button">Impacto</button>
                     </div>
-                </div>
+                </section>
 
-                <div class="action-grid">
-                    <button id="pauseBtn" type="button">Pausar</button>
-                    <button id="resetBtn" type="button">Resetar camera</button>
-                    <button id="snapshotBtn" type="button">Salvar snapshot</button>
-                    <button id="copyConfigBtn" type="button">Copiar configuracao</button>
-                    <button id="cameraBtn" type="button">Desativar camera</button>
-                </div>
+                <section class="control-card" aria-labelledby="sectionActionsTitle">
+                    <h3 id="sectionActionsTitle">Acoes Rapidas</h3>
+                    <div class="action-grid">
+                        <button id="pauseBtn" type="button">Pausar</button>
+                        <button id="resetBtn" type="button">Resetar camera</button>
+                        <button id="snapshotBtn" type="button">Salvar snapshot</button>
+                        <button id="copyConfigBtn" type="button">Copiar configuracao</button>
+                        <button id="cameraBtn" type="button">Desativar camera</button>
+                    </div>
+                </section>
 
-                <div class="hint-block">
-                    <h3>Atalhos</h3>
+                <details class="shortcut-block" open>
+                    <summary>Atalhos e Navegacao</summary>
                     <p><kbd>Espaco</kbd> Pausar/retomar</p>
                     <p><kbd>G</kbd> Toggle camera</p>
                     <p><kbd>C</kbd> Mostrar/ocultar preview</p>
                     <p><kbd>P</kbd> Alternar presets</p>
                     <p><kbd>1</kbd> Auto <kbd>2</kbd> Alta <kbd>3</kbd> Balanceada <kbd>4</kbd> Performance</p>
-                </div>
+                </details>
             </aside>
         </main>
+
+        <section class="journey-strip reveal" aria-label="Jornada de ativacao">
+            <article class="journey-card">
+                <h2>Jornada recomendada</h2>
+                <ol class="journey-list" id="journeyList">
+                    <li id="journeyStepCamera">Ativar camera e permitir acesso ao sensor.</li>
+                    <li id="journeyStepGesture">Apresentar a mao para detectar gestos.</li>
+                    <li id="journeyStepTune">Selecionar preset ou ajustar sensibilidade.</li>
+                </ol>
+            </article>
+
+            <article class="journey-card">
+                <h2>Legenda de gestos</h2>
+                <div class="gesture-legend">
+                    <span class="legend-chip">Ponteiro: controle livre</span>
+                    <span class="legend-chip">Punho: impacto energetico</span>
+                    <span class="legend-chip">Vitoria: macro e fluidez</span>
+                    <span class="legend-chip">Hang Loose: congelar tempo</span>
+                    <span class="legend-chip">Mao aberta: modo zen</span>
+                </div>
+            </article>
+        </section>
 
         <section class="camera-dock reveal" aria-label="Preview da camera">
             <div class="camera-header">
@@ -182,8 +241,7 @@
         </section>
 
         <footer class="shortcut-bar">
-            <p>Gestos: <strong>Ponteiro</strong> controle livre, <strong>Punho</strong> impacto, <strong>Vitoria</strong>
-                zoom suave, <strong>Hang Loose</strong> congelar, <strong>Mao aberta</strong> modo zen.</p>
+            <p>Experiencia desenhada para controle por gesto com fallback por mouse e foco em clareza operacional.</p>
             <p class="author">Autoria visual e tecnica: Matheus Siqueira</p>
         </footer>
     </div>

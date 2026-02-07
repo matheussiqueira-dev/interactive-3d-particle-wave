@@ -7,6 +7,11 @@ export class UIController {
         this.qualityModeLabel = document.getElementById('qualityModeLabel');
         this.inputSourceLabel = document.getElementById('inputSourceLabel');
 
+        this.signalSourceLabel = document.getElementById('signalSourceLabel');
+        this.signalWaveLabel = document.getElementById('signalWaveLabel');
+        this.signalSensitivityLabel = document.getElementById('signalSensitivityLabel');
+        this.recommendationLabel = document.getElementById('recommendationLabel');
+
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.loadingTitle = document.getElementById('loadingTitle');
         this.loadingMessage = document.getElementById('loadingMessage');
@@ -31,9 +36,16 @@ export class UIController {
         this.presetExplorerBtn = document.getElementById('presetExplorerBtn');
         this.presetImpactBtn = document.getElementById('presetImpactBtn');
 
+        this.heroCameraBtn = document.getElementById('heroCameraBtn');
+        this.heroPresetBtn = document.getElementById('heroPresetBtn');
+
         this.togglePreviewBtn = document.getElementById('togglePreviewBtn');
         this.videoShell = document.getElementById('videoShell');
         this.cameraNotice = document.getElementById('cameraNotice');
+
+        this.journeyStepCamera = document.getElementById('journeyStepCamera');
+        this.journeyStepGesture = document.getElementById('journeyStepGesture');
+        this.journeyStepTune = document.getElementById('journeyStepTune');
 
         this.toastTimer = null;
     }
@@ -67,6 +79,9 @@ export class UIController {
         this.presetCalmBtn.addEventListener('click', () => handlers.onPresetSelect?.('calm'));
         this.presetExplorerBtn.addEventListener('click', () => handlers.onPresetSelect?.('explorer'));
         this.presetImpactBtn.addEventListener('click', () => handlers.onPresetSelect?.('impact'));
+
+        this.heroCameraBtn.addEventListener('click', () => handlers.onCameraToggle?.());
+        this.heroPresetBtn.addEventListener('click', () => handlers.onRecommendedPreset?.());
     }
 
     setControlValues(settings) {
@@ -75,10 +90,25 @@ export class UIController {
         this.sensitivityRange.value = String(settings.sensitivity);
         this.reducedMotionToggle.checked = Boolean(settings.reducedMotion);
         this.setInteractionValue(settings.sensitivity);
+        this.setSignalWave(settings.wave);
     }
 
     setInteractionValue(value) {
-        this.interactionValue.textContent = `${value.toFixed(1)}x`;
+        const formatted = `${value.toFixed(1)}x`;
+        this.interactionValue.textContent = formatted;
+        this.setSignalSensitivity(formatted);
+    }
+
+    setSignalSensitivity(label) {
+        this.signalSensitivityLabel.textContent = label;
+    }
+
+    setSignalWave(label) {
+        this.signalWaveLabel.textContent = label;
+    }
+
+    setRecommendation(label) {
+        this.recommendationLabel.textContent = label;
     }
 
     setTrackingStatus(text, state = 'neutral') {
@@ -105,6 +135,7 @@ export class UIController {
 
     setInputSource(sourceLabel) {
         this.inputSourceLabel.textContent = sourceLabel;
+        this.signalSourceLabel.textContent = sourceLabel;
     }
 
     setLoading(visible, title, message) {
@@ -138,6 +169,10 @@ export class UIController {
     setCameraActive(active) {
         this.cameraBtn.textContent = active ? 'Desativar camera' : 'Ativar camera';
         this.cameraBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+        this.heroCameraBtn.textContent = active ? 'Desativar Sensor de Gestos' : 'Ativar Sensor de Gestos';
+        this.heroCameraBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+
         this.cameraNotice.textContent = active
             ? 'Camera ativa e detectando gestos.'
             : 'Camera inativa. Use o mouse para interagir.';
@@ -162,6 +197,12 @@ export class UIController {
             button.classList.toggle('is-active', active);
             button.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
+    }
+
+    setJourneyState(state) {
+        this.journeyStepCamera.classList.toggle('is-done', Boolean(state.cameraReady));
+        this.journeyStepGesture.classList.toggle('is-done', Boolean(state.gestureReady));
+        this.journeyStepTune.classList.toggle('is-done', Boolean(state.tuned));
     }
 
     showToast(message) {

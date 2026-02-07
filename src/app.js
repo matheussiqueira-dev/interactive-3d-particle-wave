@@ -69,6 +69,10 @@ function pointerToWorld(pointer) {
     };
 }
 
+function getWaveLabel(waveKey) {
+    return WAVE_PROFILES[waveKey]?.label || waveKey;
+}
+
 function buildSettings() {
     const qualityKeys = new Set(Object.keys(QUALITY_PRESETS));
     const waveKeys = new Set(Object.keys(WAVE_PROFILES));
@@ -109,6 +113,7 @@ ui.setCameraActive(false);
 ui.setPreviewVisible(true);
 ui.setInputSource('Mouse');
 ui.setActivePreset(activePresetKey);
+ui.setSignalWave(getWaveLabel(settings.wave));
 
 const canvasHost = document.getElementById('canvasHost');
 const videoElement = document.getElementById('inputVideo');
@@ -171,6 +176,8 @@ let cameraActive = false;
 let previewVisible = true;
 let virtualTime = 0;
 let fpsUiTimer = 0;
+let hasUserAdjustedControl = activePresetKey !== 'custom';
+let hasDetectedGestureEver = false;
 
 let gestureState = {
     detected: false,
@@ -202,6 +209,35 @@ function persistUserSettings() {
 function syncPresetState() {
     activePresetKey = inferPresetKey(settings);
     ui.setActivePreset(activePresetKey);
+}
+
+function updateJourneyAndRecommendation() {
+    const cameraReady = cameraActive;
+    const gestureReady = cameraActive && (gestureState.detected || hasDetectedGestureEver);
+    const tuned = hasUserAdjustedControl || activePresetKey !== 'custom';
+
+    ui.setJourneyState({
+        cameraReady,
+        gestureReady,
+        tuned,
+    });
+
+    if (!cameraReady) {
+        ui.setRecommendation('Ative o sensor de gestos para liberar interacao por mao.');
+        return;
+    }
+
+    if (!gestureReady) {
+        ui.setRecommendation('Aponte sua mao para a camera para iniciar deteccao de gestos.');
+        return;
+    }
+
+    if (!tuned) {
+        ui.setRecommendation('Aplique um preset ou ajuste sensibilidade para personalizar a experiencia.');
+        return;
+    }
+
+    ui.setRecommendation('Fluxo pronto: explore, capture snapshot e compartilhe a configuracao.');
 }
 
 function setInputSourceLabel(sourceLabel) {
@@ -274,6 +310,8 @@ function syncModeFromInput() {
     if (cameraActive && !gestureState.detected && !mouseState.active) {
         ui.setGesture('Camera ativa: aguardando mao', 'rgb(157 205 225)');
     }
+
+    updateJourneyAndRecommendation();
 }
 
 function resetSceneView() {
@@ -360,12 +398,14 @@ function applyPreset(presetKey) {
     settings.wave = preset.wave;
     settings.sensitivity = preset.sensitivity;
     settings.reducedMotion = preset.reducedMotion;
+    hasUserAdjustedControl = true;
 
     if (settings.quality === 'auto') {
         autoQualityKey = resolveAutoQualityKey();
     }
 
     ui.setControlValues(settings);
+    ui.setSignalWave(getWaveLabel(settings.wave));
     applyQuality(false);
     syncPresetState();
     persistUserSettings();
@@ -381,6 +421,10 @@ function cyclePreset() {
         : (currentIndex + 1) % PRESET_SEQUENCE.length;
 
     applyPreset(PRESET_SEQUENCE[nextIndex]);
+}
+
+function applyRecommendedPreset() {
+    applyPreset('explorer');
 }
 
 async function toggleCamera(gestureController) {
@@ -660,6 +704,9 @@ const gestureController = new GestureController({
     videoElement,
     onState: (nextState) => {
         gestureState = nextState;
+        if (nextState.detected) {
+            hasDetectedGestureEver = true;
+        }
 
         if (cameraActive) {
             if (nextState.detected && !lastDetectionState) {
@@ -687,6 +734,7 @@ const gestureController = new GestureController({
 ui.bindControls({
     onQualityChange: (qualityKey) => {
         settings.quality = qualityKey;
+        hasUserAdjustedControl = true;
         if (qualityKey === 'auto') {
             autoQualityKey = resolveAutoQualityKey();
         }
@@ -696,6 +744,8 @@ ui.bindControls({
     },
     onWaveChange: (waveKey) => {
         settings.wave = waveKey;
+        hasUserAdjustedControl = true;
+        ui.setSignalWave(getWaveLabel(settings.wave));
         syncPresetState();
         persistUserSettings();
         const label = WAVE_PROFILES[waveKey]?.label || waveKey;
@@ -703,11 +753,13 @@ ui.bindControls({
     },
     onSensitivityChange: (value) => {
         settings.sensitivity = value;
+        hasUserAdjustedControl = true;
         syncPresetState();
         persistUserSettings();
     },
     onReducedMotionChange: (checked) => {
         settings.reducedMotion = checked;
+        hasUserAdjustedControl = true;
         syncPresetState();
         persistUserSettings();
         ui.showToast(checked ? 'Modo reduzido ativado.' : 'Modo reduzido desativado.');
@@ -735,6 +787,9 @@ ui.bindControls({
     onPresetSelect: (presetKey) => {
         applyPreset(presetKey);
     },
+    onRecommendedPreset: () => {
+        applyRecommendedPreset();
+    },
 });
 
 setupPointerEvents();
@@ -753,6 +808,7 @@ persistUserSettings();
 applyQuality(false);
 resizeRenderer();
 syncModeFromInput();
+updateJourneyAndRecommendation();
 
 (async () => {
     ui.setLoading(true, 'Inicializando experiencia', 'Preparando renderizacao e solicitando acesso a camera...');
