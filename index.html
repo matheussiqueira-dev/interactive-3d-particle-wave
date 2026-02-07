@@ -1,395 +1,138 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Galáxia Interativa - Matheus Siqueira</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #050505;
-            font-family: 'Segoe UI', sans-serif;
-        }
+    <title>Interactive 3D Particle Wave | Matheus Siqueira</title>
+    <meta name="description" content="Experiencia 3D interativa com particulas, gestos por webcam e painel de controle em tempo real.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/main.css">
 
-        /* HUD - Interface com seu nome */
-        #creator-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 25px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            letter-spacing: 2px;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.15);
-            z-index: 100;
-        }
-
-        /* Container da Webcam estilo HUD */
-        #video-container {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 240px;
-            height: 180px;
-            border: 2px solid rgba(0, 255, 255, 0.4);
-            border-bottom: 5px solid rgba(0, 255, 255, 0.6);
-            border-radius: 8px 8px 20px 8px;
-            /* Design assimétrico */
-            overflow: hidden;
-            z-index: 10;
-            background: #000;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-            /* Espelhar imagem */
-            opacity: 0.8;
-        }
-
-        /* Texto do Gesto Detectado */
-        #gesture-hud {
-            position: absolute;
-            bottom: 215px;
-            /* Logo acima da câmera */
-            left: 20px;
-            color: #00ffff;
-            font-size: 1.1rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-left: 4px solid #00ffff;
-            display: none;
-            z-index: 20;
-            backdrop-filter: blur(5px);
-        }
-
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: cyan;
-            text-align: center;
-            font-family: monospace;
-        }
-    </style>
-
-    <!-- Bibliotecas Necessárias -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
-        crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
+    <div class="app-shell">
+        <header class="top-bar reveal">
+            <div class="brand-block">
+                <p class="eyebrow">Realtime Gesture Visual Lab</p>
+                <h1>Interactive 3D Particle Wave</h1>
+            </div>
 
-    <!-- CRÉDITO DO CRIADOR -->
-    <div id="creator-badge">
-        CRIADO POR <span style="color: #00ffff; font-weight:bold; margin-left: 8px;">MATHEUS SIQUEIRA</span>
+            <div class="status-row" aria-live="polite">
+                <div class="pill" id="trackingPill" data-state="neutral">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span id="trackingStatus">Aguardando inicializacao da camera</span>
+                </div>
+                <div class="pill metric-pill">
+                    <span>FPS</span>
+                    <strong id="fpsValue">--</strong>
+                </div>
+                <div class="pill metric-pill">
+                    <span>Particulas</span>
+                    <strong id="particleCountLabel">--</strong>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-layout">
+            <section class="stage-panel reveal" aria-label="Visualizacao 3D">
+                <div id="canvasHost" class="canvas-host" role="img"
+                    aria-label="Simulacao tridimensional de onda de particulas reativa a gestos"></div>
+
+                <div id="loadingOverlay" class="overlay-card" role="status" aria-live="polite">
+                    <h2 id="loadingTitle">Inicializando experiencia</h2>
+                    <p id="loadingMessage">Conceda permissao de camera para ativar o controle por gestos.</p>
+                </div>
+
+                <div class="hud-card" id="gestureCard">
+                    <p class="hud-label">Gesto ativo</p>
+                    <strong id="gestureLabel">Aguardando leitura</strong>
+                </div>
+
+                <div id="toast" class="toast" aria-live="assertive"></div>
+            </section>
+
+            <aside class="control-panel reveal" aria-label="Painel de controle">
+                <div class="panel-header">
+                    <h2>Controle da Simulacao</h2>
+                    <p>Performance, comportamento e usabilidade em tempo real.</p>
+                </div>
+
+                <div class="field-group">
+                    <label for="qualitySelect">Qualidade</label>
+                    <select id="qualitySelect" aria-label="Selecionar qualidade">
+                        <option value="auto">Auto</option>
+                        <option value="high">Alta</option>
+                        <option value="balanced">Balanceada</option>
+                        <option value="performance">Performance</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="waveSelect">Perfil de onda</label>
+                    <select id="waveSelect" aria-label="Selecionar perfil de onda">
+                        <option value="cosmos">Cosmos</option>
+                        <option value="ripple">Ripple</option>
+                        <option value="storm">Storm</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="sensitivityRange">Sensibilidade de interacao</label>
+                    <div class="range-row">
+                        <input id="sensitivityRange" type="range" min="0.6" max="1.6" step="0.1" value="1">
+                        <output id="interactionValue" for="sensitivityRange">1.0x</output>
+                    </div>
+                </div>
+
+                <div class="field-group toggle-group">
+                    <label for="reducedMotionToggle">Modo de movimento reduzido</label>
+                    <input id="reducedMotionToggle" type="checkbox">
+                </div>
+
+                <div class="action-grid">
+                    <button id="pauseBtn" type="button">Pausar</button>
+                    <button id="resetBtn" type="button">Resetar camera</button>
+                    <button id="snapshotBtn" type="button">Salvar snapshot</button>
+                    <button id="cameraBtn" type="button">Desativar camera</button>
+                </div>
+
+                <div class="hint-block">
+                    <h3>Atalhos</h3>
+                    <p><kbd>Espaco</kbd> Pausar/retomar</p>
+                    <p><kbd>G</kbd> Toggle camera</p>
+                    <p><kbd>C</kbd> Mostrar/ocultar preview</p>
+                    <p><kbd>1</kbd> Auto <kbd>2</kbd> Alta <kbd>3</kbd> Balanceada <kbd>4</kbd> Performance</p>
+                </div>
+            </aside>
+        </main>
+
+        <section class="camera-dock reveal" aria-label="Preview da camera">
+            <div class="camera-header">
+                <h2>Camera de referencia</h2>
+                <button id="togglePreviewBtn" type="button">Ocultar preview</button>
+            </div>
+
+            <div class="video-shell" id="videoShell">
+                <video id="inputVideo" playsinline muted></video>
+                <div id="cameraNotice" class="camera-notice">Camera inativa. Use o mouse para interagir.</div>
+            </div>
+        </section>
+
+        <footer class="shortcut-bar">
+            <p>Gestos: <strong>Ponteiro</strong> controle livre, <strong>Punho</strong> impacto, <strong>Vitoria</strong> zoom suave,
+                <strong>Hang Loose</strong> congelar, <strong>Mao aberta</strong> modo zen.
+            </p>
+            <p class="author">Autoria visual e tecnica: Matheus Siqueira</p>
+        </footer>
     </div>
 
-    <div id="loading">
-        <h2>INICIALIZANDO SISTEMA...</h2>
-        <p>Aguardando permissão da câmera</p>
-    </div>
-
-    <div id="gesture-hud">AGUARDANDO...</div>
-
-    <div id="video-container">
-        <video id="input_video"></video>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-
-        // --- 1. CONFIGURAÇÃO THREE.JS ---
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.0015);
-
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 40, 100);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.body.appendChild(renderer.domElement);
-
-        // --- 2. PARTICULAS ---
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 28000;
-        const posArray = new Float32Array(particlesCount * 3);
-        const colorsArray = new Float32Array(particlesCount * 3);
-
-        const gridSize = 250;
-        const separation = 1.0;
-
-        for (let i = 0; i < particlesCount; i++) {
-            const x = (Math.random() * gridSize * separation) - (gridSize * separation / 2);
-            const z = (Math.random() * gridSize * separation) - (gridSize * separation / 2);
-
-            posArray[i * 3] = x;
-            posArray[i * 3 + 1] = 0;
-            posArray[i * 3 + 2] = z;
-
-            // Cor Inicial
-            colorsArray[i * 3] = 0.0;
-            colorsArray[i * 3 + 1] = 0.5;
-            colorsArray[i * 3 + 2] = 1.0;
-        }
-
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
-
-        // Textura da partícula
-        const getTexture = () => {
-            const c = document.createElement('canvas');
-            c.width = 32; c.height = 32;
-            const ctx = c.getContext('2d');
-            const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-            g.addColorStop(0, 'rgba(255,255,255,1)');
-            g.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = g;
-            ctx.fillRect(0, 0, 32, 32);
-            return new THREE.Texture(c);
-        };
-        const tex = getTexture();
-        tex.needsUpdate = true;
-
-        const material = new THREE.PointsMaterial({
-            size: 0.9,
-            map: tex,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.9,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const particlesMesh = new THREE.Points(particlesGeometry, material);
-        scene.add(particlesMesh);
-
-        // --- 3. ESTADOS E GESTOS ---
-        let handState = { detected: false, x: 0, y: 0, gesture: 'NONE' };
-
-        // Parâmetros de Animação (Lerp)
-        let params = {
-            timeSpeed: 1.0,
-            rotationSpeed: 0.001,
-            color: { r: 0, g: 0.5, b: 1 }, // Azul Padrão
-            size: 0.9,
-            freeze: false
-        };
-
-        // Alvos
-        let targetParams = { ...params };
-
-        // --- 4. IA MEDIAPIPE ---
-        const gestureHud = document.getElementById('gesture-hud');
-
-        function detectGesture(landmarks) {
-            const isFingerUp = (tip, base) => landmarks[tip].y < landmarks[base].y;
-
-            // Dedos (Índices: 8=Indicador, 12=Médio, 16=Anelar, 20=Mindinho)
-            // Bases (Índices: 6, 10, 14, 18)
-            const index = isFingerUp(8, 6);
-            const middle = isFingerUp(12, 10);
-            const ring = isFingerUp(16, 14);
-            const pinky = isFingerUp(20, 18);
-
-            // Combinações
-            if (!index && !middle && !ring && !pinky) return 'FIST'; // Punho Fechado
-            if (index && middle && !ring && !pinky) return 'VICTORY'; // V
-            if (index && !middle && !ring && pinky) return 'HANG_LOOSE'; // Shaka
-            if (index && middle && ring && pinky) return 'OPEN'; // Mão Aberta
-            if (index && !middle) return 'POINTER'; // Só indicador
-
-            return 'POINTER';
-        }
-
-        function onResults(results) {
-            document.getElementById('loading').style.display = 'none';
-
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                handState.detected = true;
-                const lm = results.multiHandLandmarks[0];
-
-                // Posição (Espelhado)
-                handState.x = (1 - lm[8].x) * window.innerWidth - (window.innerWidth / 2);
-                handState.y = -(lm[8].y * window.innerHeight - (window.innerHeight / 2));
-
-                const gesture = detectGesture(lm);
-                handState.gesture = gesture;
-
-                // ATUALIZAR INTERFACE E COMPORTAMENTO
-                gestureHud.style.display = 'block';
-                let text = "";
-                let hudColor = "#00ffff";
-
-                switch (gesture) {
-                    case 'FIST':
-                        text = "✊ MODO FÚRIA";
-                        hudColor = "#ff3300";
-                        targetParams = { timeSpeed: 3.0, rotationSpeed: 0.02, color: { r: 1, g: 0.1, b: 0 }, size: 1.0, freeze: false };
-                        break;
-                    case 'VICTORY':
-                        text = "✌️ ZOOM MACRO";
-                        hudColor = "#00ff00";
-                        targetParams = { timeSpeed: 0.5, rotationSpeed: 0.001, color: { r: 0, g: 1, b: 0.2 }, size: 3.0, freeze: false };
-                        break;
-                    case 'HANG_LOOSE':
-                        text = "🤙 CONGELAR TEMPO";
-                        hudColor = "#ffffff";
-                        targetParams.freeze = true;
-                        targetParams.rotationSpeed = 0;
-                        targetParams.color = { r: 0.8, g: 0.8, b: 0.9 };
-                        break;
-                    case 'OPEN':
-                        text = "🖐 MODO ZEN";
-                        hudColor = "#00ccff";
-                        targetParams = { timeSpeed: 0.2, rotationSpeed: 0.0005, color: { r: 0, g: 0.8, b: 1 }, size: 0.8, freeze: false };
-                        break;
-                    default: // POINTER
-                        text = "👆 CONTROLE LIVRE";
-                        hudColor = "#00ffff";
-                        targetParams = { timeSpeed: 1.0, rotationSpeed: 0.002, color: { r: 0.2, g: 0.5, b: 1 }, size: 0.9, freeze: false };
-                        break;
-                }
-
-                gestureHud.innerText = text;
-                gestureHud.style.color = hudColor;
-                gestureHud.style.borderLeftColor = hudColor;
-
-            } else {
-                handState.detected = false;
-                gestureHud.style.display = 'none';
-                // Reset suave
-                targetParams = { timeSpeed: 1.0, rotationSpeed: 0.001, color: { r: 0.1, g: 0.3, b: 0.8 }, size: 0.9, freeze: false };
-            }
-        }
-
-        // Init MediaPipe
-        const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
-        hands.setOptions({ maxNumHands: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-        hands.onResults(onResults);
-
-        const videoEl = document.getElementById('input_video');
-        const cameraUtils = new Camera(videoEl, {
-            onFrame: async () => { await hands.send({ image: videoEl }); },
-            width: 320, height: 240
-        });
-        cameraUtils.start();
-
-        // --- 5. LOOP PRINCIPAL ---
-        const cursor = new THREE.Mesh(
-            new THREE.RingGeometry(1.5, 2, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
-        );
-        scene.add(cursor);
-
-        const clock = new THREE.Clock();
-        let virtualTime = 0;
-        let currentX = 0, currentY = 0;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const dt = clock.getDelta();
-
-            // Suavização (Lerp)
-            const f = 0.05;
-            params.rotationSpeed += (targetParams.rotationSpeed - params.rotationSpeed) * f;
-            params.timeSpeed += (targetParams.timeSpeed - params.timeSpeed) * f;
-            params.size += (targetParams.size - params.size) * f;
-            params.color.r += (targetParams.color.r - params.color.r) * f;
-            params.color.g += (targetParams.color.g - params.color.g) * f;
-            params.color.b += (targetParams.color.b - params.color.b) * f;
-
-            if (!targetParams.freeze) virtualTime += dt * params.timeSpeed;
-
-            // Movimento Cursor e Rotação
-            if (handState.detected) {
-                currentX += (handState.x - currentX) * 0.1;
-                currentY += (handState.y - currentY) * 0.1;
-
-                cursor.position.set(currentX * 0.15, 5, -currentY * 0.15 + 20);
-                cursor.visible = true;
-                cursor.material.color.setRGB(params.color.r, params.color.g, params.color.b);
-
-                particlesMesh.rotation.y += params.rotationSpeed + (currentX * 0.0001);
-                particlesMesh.rotation.x = currentY * 0.0002;
-            } else {
-                cursor.visible = false;
-                particlesMesh.rotation.y += params.rotationSpeed;
-                particlesMesh.rotation.x += (0 - particlesMesh.rotation.x) * 0.05;
-            }
-
-            // Atualizar Partículas
-            material.size = params.size;
-            const positions = particlesGeometry.attributes.position.array;
-            const colors = particlesGeometry.attributes.color.array;
-            const cursorWorldPos = cursor.position;
-
-            for (let i = 0; i < particlesCount; i++) {
-                const i3 = i * 3;
-                const x = positions[i3];
-                const z = positions[i3 + 2];
-
-                // Matematica da Onda
-                let y = Math.sin(x * 0.05 + virtualTime) * Math.cos(z * 0.05 + virtualTime) * 2;
-                y += Math.sin(Math.sqrt(x * x + z * z) * 0.1 - virtualTime * 2) * 1.5;
-
-                // Interação Mouse/Mão
-                if (handState.detected) {
-                    const dx = x - (cursorWorldPos.x * 5);
-                    const dz = z - (cursorWorldPos.z * 5);
-                    const dist = Math.sqrt(dx * dx + dz * dz);
-
-                    if (dist < 40) {
-                        const force = (40 - dist) / 40;
-                        if (handState.gesture === 'FIST') {
-                            y += (Math.random() - 0.5) * 15 * force; // Explosão
-                        } else {
-                            y -= force * 15; // Afundar
-                        }
-                    }
-                }
-
-                positions[i3 + 1] = y;
-
-                // Atualizar Cores
-                const h = (y + 5) / 10;
-                colors[i3] = params.color.r * (0.6 + h * 0.4);
-                colors[i3 + 1] = params.color.g * (0.6 + h * 0.4);
-                colors[i3 + 2] = params.color.b + (h * 0.2);
-            }
-
-            particlesGeometry.attributes.position.needsUpdate = true;
-            particlesGeometry.attributes.color.needsUpdate = true;
-
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        animate();
-    </script>
+    <script type="module" src="./src/app.js"></script>
 </body>
 
 </html>
