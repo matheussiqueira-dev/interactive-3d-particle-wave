@@ -188,6 +188,17 @@
         }
       }
     },
+    "/api/v1/presets/{presetId}/clone": {
+      "post": {
+        "summary": "Clonar preset",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "presetId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "201": { "description": "Preset clonado" },
+          "403": { "description": "Sem permissao" }
+        }
+      }
+    },
     "/api/v1/telemetry/events": {
       "post": {
         "summary": "Registrar evento de telemetria",

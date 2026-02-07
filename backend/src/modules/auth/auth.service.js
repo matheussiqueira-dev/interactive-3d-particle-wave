@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const { env } = require('../../config/env');
 const { AppError } = require('../../common/errors/app-error');
 const { signAccessToken } = require('./token-service');
+const { validatePasswordStrength } = require('./password-policy');
 
 function sanitizeUser(user) {
     return {
@@ -21,6 +22,15 @@ class AuthService {
     }
 
     async register(input, requester) {
+        const passwordCheck = validatePasswordStrength(input.password);
+        if (!passwordCheck.isValid) {
+            throw new AppError('Senha nao atende aos requisitos de seguranca', {
+                statusCode: 400,
+                code: 'AUTH_WEAK_PASSWORD',
+                details: passwordCheck.issues,
+            });
+        }
+
         const existing = await this.authRepository.findByEmail(input.email);
         if (existing) {
             throw new AppError('Ja existe usuario com este email', {

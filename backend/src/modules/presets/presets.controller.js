@@ -18,6 +18,11 @@ class PresetsController {
         return res.status(201).json({ data: preset });
     };
 
+    clone = async (req, res) => {
+        const preset = await this.service.clonePreset(req.params.presetId, req.auth);
+        return res.status(201).json({ data: preset });
+    };
+
     update = async (req, res) => {
         const preset = await this.service.updatePreset(req.params.presetId, req.body, req.auth);
         return res.status(200).json({ data: preset });

@@ -75,7 +75,7 @@ function createApp(dependencies = createContainer()) {
 
     app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiDocument));
 
-    app.use('/api/v1/system', createSystemRouter());
+    app.use('/api/v1/system', createSystemRouter(dependencies.store));
     app.use('/api/v1/auth', createAuthRouter(dependencies.authController));
     app.use('/api/v1/presets', createPresetsRouter(dependencies.presetsController));
     app.use('/api/v1/telemetry', createTelemetryRouter(dependencies.telemetryController));

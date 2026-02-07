@@ -16,6 +16,7 @@ function createPresetsRouter(controller) {
     router.get('/:presetId', optionalAuthenticate, validate(presetIdParamSchema, 'params'), asyncHandler(controller.getById));
 
     router.post('/', authenticate, authorize('editor', 'admin'), validate(createPresetSchema), asyncHandler(controller.create));
+    router.post('/:presetId/clone', authenticate, authorize('editor', 'admin'), validate(presetIdParamSchema, 'params'), asyncHandler(controller.clone));
     router.patch('/:presetId', authenticate, authorize('editor', 'admin'), validate(presetIdParamSchema, 'params'), validate(updatePresetSchema), asyncHandler(controller.update));
     router.delete('/:presetId', authenticate, authorize('editor', 'admin'), validate(presetIdParamSchema, 'params'), asyncHandler(controller.remove));
 

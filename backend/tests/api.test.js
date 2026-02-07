@@ -79,7 +79,7 @@ test('auth, presets and telemetry workflow should succeed', async () => {
         .send({
             name: 'Matheus Admin',
             email: 'admin@example.com',
-            password: 'SecurePass123!',
+            password: 'SecurePass123!#',
         })
         .expect(201);
 
@@ -89,7 +89,7 @@ test('auth, presets and telemetry workflow should succeed', async () => {
         .post('/api/v1/auth/login')
         .send({
             email: 'admin@example.com',
-            password: 'SecurePass123!',
+            password: 'SecurePass123!#',
         })
         .expect(200);
 
@@ -111,6 +111,11 @@ test('auth, presets and telemetry workflow should succeed', async () => {
         .expect(201);
 
     assert.equal(presetResponse.body.data.name, 'Teste Impacto');
+
+    await request(ctx.app)
+        .post(`/api/v1/presets/${presetResponse.body.data.id}/clone`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(201);
 
     await request(ctx.app)
         .get('/api/v1/presets?scope=mine')

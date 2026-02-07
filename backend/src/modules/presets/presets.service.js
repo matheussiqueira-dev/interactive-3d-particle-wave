@@ -129,6 +129,45 @@ class PresetsService {
         return sanitizePreset(preset);
     }
 
+    async clonePreset(presetId, user) {
+        const current = await this.presetsRepository.findById(presetId);
+
+        if (!current) {
+            throw new AppError('Preset nao encontrado', {
+                statusCode: 404,
+                code: 'PRESET_NOT_FOUND',
+            });
+        }
+
+        const canClone = current.isPublic || user.role === 'admin' || current.ownerId === user.userId;
+
+        if (!canClone) {
+            throw new AppError('Sem permissao para clonar este preset', {
+                statusCode: 403,
+                code: 'PRESET_FORBIDDEN',
+            });
+        }
+
+        const now = new Date().toISOString();
+
+        const cloned = {
+            id: uuidv4(),
+            name: `${current.name} (Copia)`,
+            description: current.description,
+            quality: current.quality,
+            wave: current.wave,
+            sensitivity: current.sensitivity,
+            reducedMotion: current.reducedMotion,
+            ownerId: user.userId,
+            isPublic: false,
+            createdAt: now,
+            updatedAt: now,
+        };
+
+        await this.presetsRepository.create(cloned);
+        return sanitizePreset(cloned);
+    }
+
     async updatePreset(presetId, updates, user) {
         const current = await this.presetsRepository.findById(presetId);
 
